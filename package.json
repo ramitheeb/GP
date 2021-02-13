@@ -1,0 +1,25 @@
+{
+  "name": "gp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ramitheeb/GP.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ramitheeb/GP/issues"
+  },
+  "homepage": "https://github.com/ramitheeb/GP#readme",
+  "dependencies": {
+    "@stroncium/procfs": "^1.2.1",
+    "express": "^4.17.1",
+    "systeminformation": "^5.3.0"
+  }
+}
