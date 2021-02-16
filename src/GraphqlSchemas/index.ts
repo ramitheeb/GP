@@ -4,6 +4,8 @@ import CpuData from "./CpuData";
 import CpuCacheData from "./CpuCacheData";
 import SystemData from "./SystemData";
 import RaspberryRevisionData from "./RaspberryRevisionData";
+import allTypes from "./types";
+
 const typeDefs = [
   gql`
     type Query {
@@ -11,13 +13,13 @@ const typeDefs = [
       cpu: CpuData
       cpuCache: CpuCacheData
       system: SystemData
+      bios: BiosData
+      CpuCurrentSpeedData: CpuCurrentSpeedData
+      CpuTemperatureData: CpuTemperatureData
+      MemData: MemData
     }
   `,
-  TimeData,
-  CpuData,
-  CpuCacheData,
-  SystemData,
-  RaspberryRevisionData,
+  allTypes,
 ];
 
 export default typeDefs;
