@@ -1,6 +1,7 @@
 import * as systemInformation from "systeminformation";
 
-const getCpuCurrentSpeedData = () => {
+const getCpuCurrentSpeedData = (_, __, context) => {
+  if (!context.req.username) return;
   return systemInformation.cpuCurrentSpeed();
 };
 

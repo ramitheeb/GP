@@ -1,6 +1,7 @@
 import * as systemInformation from "systeminformation";
 
-const getSystemData = () => {
+const getSystemData = (_, __, context) => {
+  if (!context.req.username) return;
   return systemInformation.system();
 };
 

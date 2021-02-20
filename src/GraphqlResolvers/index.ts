@@ -10,7 +10,6 @@ import * as bcrypt from "bcryptjs";
 import * as jwt from "jsonwebtoken";
 import { UserInputError, AuthenticationError } from "apollo-server-express";
 import config from "../config";
-import { GetTokenProps, UserCredentials } from "./types";
 
 const getToken = ({ username, password }) =>
   jwt.sign(
@@ -34,7 +33,7 @@ const resolvers = {
     MemData: getMemData,
   },
   Mutation: {
-    async login(_, { username, password }, { res }) {
+    login(_, { username, password }, { res }) {
       const user = {
         username: "admin",
         password: "admin",

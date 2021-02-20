@@ -1,6 +1,7 @@
 import * as systemInformation from "systeminformation";
 
-const getCpuCache = () => {
+const getCpuCache = (_, __, context) => {
+  if (!context.req.username) return;
   return systemInformation.cpuCache();
 };
 

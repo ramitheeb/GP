@@ -17,7 +17,7 @@ app.use((req, _, next) => {
   const accessToken = req.cookies["access-token"];
   try {
     const data = verify(accessToken, config.SECRET) as any;
-    (req as any).userId = data.userId;
+    (req as any).username = data.username;
   } catch {}
   next();
 });

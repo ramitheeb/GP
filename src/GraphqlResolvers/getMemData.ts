@@ -1,6 +1,7 @@
 import * as systemInformation from "systeminformation";
 
-const getMemData = () => {
+const getMemData = (_, __, context) => {
+  if (!context.req.username) return;
   return systemInformation.mem();
 };
 
