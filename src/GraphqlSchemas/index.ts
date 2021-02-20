@@ -18,7 +18,11 @@ const typeDefs = [
       CpuTemperatureData: CpuTemperatureData
       MemData: MemData
     }
+    type Mutation {
+      login(username: String!, password: String!): User
+    }
   `,
+
   allTypes,
 ];
 

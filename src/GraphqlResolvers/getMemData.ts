@@ -1,4 +1,4 @@
-import systemInformation from "systeminformation";
+import * as systemInformation from "systeminformation";
 
 const getMemData = () => {
   return systemInformation.mem();

@@ -1,6 +1,21 @@
 import { gql } from "apollo-server-express";
 
 const allTypes = gql`
+  type User {
+    id: ID!
+    username: String!
+    email: String!
+    created: String!
+    token: String!
+  }
+
+  input RegisterUserInput {
+    username: String!
+    password: String!
+    confirmPassword: String!
+    email: String!
+  }
+
   type TimeData {
     current: String
     uptime: String
