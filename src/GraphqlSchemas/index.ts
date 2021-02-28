@@ -1,9 +1,4 @@
 import { gql } from "apollo-server-express";
-import TimeData from "./TimeData";
-import CpuData from "./CpuData";
-import CpuCacheData from "./CpuCacheData";
-import SystemData from "./SystemData";
-import RaspberryRevisionData from "./RaspberryRevisionData";
 import allTypes from "./types";
 
 const typeDefs = [
@@ -20,6 +15,11 @@ const typeDefs = [
     }
     type Mutation {
       login(username: String!, password: String!): User
+    }
+
+    type Subscription {
+      MemData: MemData
+      Time: TimeData
     }
   `,
 

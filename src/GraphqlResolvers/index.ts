@@ -8,7 +8,7 @@ import getCpuTemperatureData from "./getCpuTemperatureData";
 import getMemData from "./getMemData";
 import * as bcrypt from "bcryptjs";
 import * as jwt from "jsonwebtoken";
-import { UserInputError, AuthenticationError } from "apollo-server-express";
+import { UserInputError, AuthenticationError } from "apollo-server";
 import config from "../config";
 
 const getToken = ({ username, password }) =>
@@ -22,6 +22,14 @@ const getToken = ({ username, password }) =>
   );
 
 const resolvers = {
+  Subscription: {
+    MemData: {
+      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("NEW_MEM"),
+    },
+    Time: {
+      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("TIME_DATA"),
+    },
+  },
   Query: {
     time: getTimeData,
     cpu: getCPUData,
@@ -38,6 +46,7 @@ const resolvers = {
         username: "admin",
         password: "admin",
       };
+
       if (user.username !== username)
         throw new AuthenticationError("this user is not found!");
 
@@ -52,4 +61,5 @@ const resolvers = {
     },
   },
 };
+
 export default resolvers;
