@@ -16,8 +16,8 @@ const pubsub = new PubSub();
 const server = new ApolloServer({
   subscriptions: {
     path: "/subscriptions",
-    onConnect: (connectionParams, webSocket, context) => {},
-    onDisconnect: (webSocket, context) => {},
+    onConnect: (connectionParams, webSocket, context) => { },
+    onDisconnect: (webSocket, context) => { },
   },
   typeDefs,
   resolvers,
@@ -38,7 +38,7 @@ app.use((req, _, next) => {
   try {
     const data = verify(accessToken, config.SECRET) as any;
     (req as any).username = data.username;
-  } catch {}
+  } catch { }
   next();
 });
 
@@ -56,6 +56,14 @@ httpServer.listen({ port: 4000 }, () => {
 setInterval(() => {
   systemInformation.mem().then((data) => {
     pubsub.publish("NEW_MEM", { MemData: data });
+  });
+}, 2000);
+
+setInterval(() => {
+  systemInformation.disksIO().then((data) => {
+    pubsub.publish("DISK_DATA", {
+      DiskData: data
+    });
   });
 }, 2000);
 
