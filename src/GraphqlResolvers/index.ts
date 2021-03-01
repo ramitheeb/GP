@@ -10,6 +10,7 @@ import * as bcrypt from "bcryptjs";
 import * as jwt from "jsonwebtoken";
 import { UserInputError, AuthenticationError } from "apollo-server";
 import config from "../config";
+import getDiskData from "./getDiskData";
 
 const getToken = ({ username, password }) =>
   jwt.sign(
@@ -29,6 +30,9 @@ const resolvers = {
     Time: {
       subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("TIME_DATA"),
     },
+    DiskData: {
+      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("DISK_DATA"),
+    }
   },
   Query: {
     time: getTimeData,
@@ -39,6 +43,7 @@ const resolvers = {
     CpuCurrentSpeedData: getCpuCurrentSpeedData,
     CpuTemperatureData: getCpuTemperatureData,
     MemData: getMemData,
+    DiskData: getDiskData,
   },
   Mutation: {
     login(_, { username, password }, { res }) {
