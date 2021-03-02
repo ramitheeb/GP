@@ -11,6 +11,7 @@ import * as jwt from "jsonwebtoken";
 import { UserInputError, AuthenticationError } from "apollo-server";
 import config from "../config";
 import getDiskData from "./getDiskData";
+import getDiskHistoryData from "./getDiskHistoryData";
 
 const getToken = ({ username, password }) =>
   jwt.sign(
@@ -44,6 +45,7 @@ const resolvers = {
     CpuTemperatureData: getCpuTemperatureData,
     MemData: getMemData,
     DiskData: getDiskData,
+    DiskHistory: getDiskHistoryData,
   },
   Mutation: {
     login(_, { username, password }, { res }) {

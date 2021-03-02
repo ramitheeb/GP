@@ -4,15 +4,16 @@ import { RedisTimeSeries } from "redis-time-series-ts/lib/redisTimeSeries";
 
 const createDatabase=async (client:RedisTimeSeries,labels:Label[],key:string)=>{
 
-    await client.create(key,labels,31500000000);
+    //Retention of 9 days
+    await client.create(key,labels,7776000000);
 
 }
 
 const demoFunc = async ()=>{
     const factory = new RedisTimeSeriesFactory();
     const client = factory.create();
-    const key = "cpu-usage";
-    const labels = [new Label("Period","LongTerm")];
+    const key = "disk-usage:read:medium";
+    const labels = [new Label("Period","Medium Term")];
     createDatabase(client,labels,key);
     client.disconnect();
 }
