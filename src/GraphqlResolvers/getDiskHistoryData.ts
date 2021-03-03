@@ -1,7 +1,7 @@
 import {Aggregation, RedisTimeSeriesFactory, TimestampRange} from "redis-time-series-ts";
 
 const getDiskHistoryData = async(_,args,context)=>{
-    if(!context.reqx.username) return;
+    if(!context.req.username) return;
     const factory = new RedisTimeSeriesFactory();
     const client = factory.create();
     console.log("here");
@@ -11,17 +11,24 @@ const getDiskHistoryData = async(_,args,context)=>{
     const data = [{}];
     for (let i = 0; i < samples.length; i++) {
         const element = samples[i];
+        
         data[i] = {
-            rio:element.getValue(),
-            wio:null,
+            rIO:element.getValue(),
+            wIO:null,
             tIO: null,
             rIO_sec: null,
             wIO_sec: null,
             tIO_sec: null,
             ms: null,
+            timestamp:element.getTimestamp()
         }    
     }
-
+    for (let i = 0; i < data.length; i++) {
+        const element = data[i];
+        console.log(element);
+        
+        
+    }
     return {
         fromDate:args.fromDate,
         toDate:args.toDate,
