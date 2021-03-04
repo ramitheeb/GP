@@ -14,7 +14,7 @@ const typeDefs = [
       CpuTemperatureData: CpuTemperatureData
       MemData: MemData
       DiskData: DisksIoData
-      DiskHistory(toDate: Float!,fromDate:Float!,option:String!): DiskHistoryData
+      DiskHistory(toDate: Float,fromDate:Float,option:String!): DiskHistoryData
     }
     type Mutation {
       login(username: String!, password: String!): User

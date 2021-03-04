@@ -1,47 +1,64 @@
 import { Aggregation, RedisTimeSeriesFactory, TimestampRange } from "redis-time-series-ts";
 
 
-const getDiskHistoryData = async(_,args,context)=>{
-    if(!context.req.username) return;
+const getDiskHistoryData = async (_, args, context) => {
+
+    if (!context.req.username) return;
 
 
     const factory = new RedisTimeSeriesFactory();
     const client = factory.create();
     var sampleFactor: number;
+    var startDate: number = 0;
+    var endDate: number = 0;
+
     switch (args.option) {
         case "Day":
-            sampleFactor = 150 / 7 * 30;
+            endDate = (new Date()).getTime();
+            startDate = endDate - 7 * 24 * 60 * 60 * 1000;
             break;
-
+        case "Week":
+            endDate = (new Date()).getTime();
+            startDate = endDate - 5 * 7 * 24 * 60 * 60 * 1000;
+            break;
+        case "Month":
+            endDate = (new Date()).getTime();
+            startDate = endDate - 12 * 30 * 24 * 60 * 60 * 1000;
+            break;
+        case "Year":
+            endDate = (new Date()).getTime();
+            startDate = endDate - 5*12*30* 24 * 60 * 60 * 1000;
+            break;
+        case "Custom":
+            endDate = args.toDate; 
+            startDate = args.fromDate;
+            break;
         default:
-            break;
+            return;
     }
 
-    const samples = await client.range("disk-usage:read:medium", new TimestampRange(args.fromDate, args.toDate), undefined, new Aggregation("AVG", args.timeBucket));
+    
+    
+    const samples = await client.range("disk-usage:read:medium", new TimestampRange(startDate,endDate), undefined, new Aggregation("AVG", Math.floor((endDate-startDate)/150)));
 
     const data = [{}];
     for (let i = 0; i < samples.length; i++) {
         const element = samples[i];
-        
+
         data[i] = {
 
-            rio: element.getValue(),
-            wio: null,
+            rIO: element.getValue(),
+            wIO: null,
             tIO: null,
             rIO_sec: null,
             wIO_sec: null,
             tIO_sec: null,
             ms: null,
-            timestamp:element.getTimestamp()
-        }    
+            timestamp: element.getTimestamp()
+        }
 
     }
-    for (let i = 0; i < data.length; i++) {
-        const element = data[i];
-        console.log(element);
-        
-        
-    }
+
     return {
         fromDate: args.fromDate,
         toDate: args.toDate,

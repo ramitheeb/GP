@@ -5,7 +5,7 @@ import { RedisTimeSeries } from "redis-time-series-ts/lib/redisTimeSeries";
 const createDatabase=async (client:RedisTimeSeries,labels:Label[],key:string)=>{
 
     //Retention of 9 days
-    await client.create(key,labels,7776000000);
+    await client.create(key,labels,157700000000);
 
 }
 

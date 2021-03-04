@@ -15,8 +15,12 @@ const f = async ()=>{
         }
         
     }
+    console.log(samples.length);
+    
     console.log("Finished sampling");
-    await client.multiAdd(samples);
+    const multiget = await client.multiAdd(samples);
+    console.log(multiget);
+    
     console.log("Finished adding");
 
     
