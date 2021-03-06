@@ -16,8 +16,10 @@ const pubsub = new PubSub();
 const server = new ApolloServer({
   subscriptions: {
     path: "/subscriptions",
-    onConnect: (connectionParams, webSocket, context) => { },
-    onDisconnect: (webSocket, context) => { },
+    onConnect: (connectionParams, webSocket, context) => { console.log(context);
+    },
+    onDisconnect: (webSocket, context) => {console.log(("disconnected"));
+     },
   },
   typeDefs,
   resolvers,
