@@ -6,6 +6,8 @@ import getBiosData from "./getBiosData";
 import getCpuCurrentSpeedData from "./getCpuCurrentSpeedData";
 import getCpuTemperatureData from "./getCpuTemperatureData";
 import getMemData from "./getMemData";
+import getCurrentLoadData from "./getCurrentLoadData";
+import getOsInfo from "./getOsInfo";
 import * as bcrypt from "bcryptjs";
 import * as jwt from "jsonwebtoken";
 import { UserInputError, AuthenticationError } from "apollo-server";
@@ -29,6 +31,10 @@ const resolvers = {
     Time: {
       subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("TIME_DATA"),
     },
+    CurrentLoad: {
+      subscribe: (_, __, { pubsub }) =>
+        pubsub.asyncIterator("CURRENT_CPU_LOAD"),
+    },
   },
   Query: {
     time: getTimeData,
@@ -39,6 +45,8 @@ const resolvers = {
     CpuCurrentSpeedData: getCpuCurrentSpeedData,
     CpuTemperatureData: getCpuTemperatureData,
     MemData: getMemData,
+    CurrentLoad: getCurrentLoadData,
+    OsInfo: getOsInfo,
   },
   Mutation: {
     login(_, { username, password }, { res }) {

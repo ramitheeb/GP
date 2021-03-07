@@ -12,6 +12,8 @@ const typeDefs = [
       CpuCurrentSpeedData: CpuCurrentSpeedData
       CpuTemperatureData: CpuTemperatureData
       MemData: MemData
+      CurrentLoad: CurrentLoadData
+      OsInfo: OsData
     }
     type Mutation {
       login(username: String!, password: String!): User
@@ -20,6 +22,8 @@ const typeDefs = [
     type Subscription {
       MemData: MemData
       Time: TimeData
+      CpuData: CpuData
+      CurrentLoad: CurrentLoadData
     }
   `,
 

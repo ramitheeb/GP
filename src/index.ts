@@ -27,7 +27,7 @@ const server = new ApolloServer({
 const app = express();
 
 var corsOptions = {
-  origin: "http://localhost:3000",
+  origin: "http://localhost:3006",
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -35,14 +35,15 @@ app.use(cookieParser());
 
 app.use((req, _, next) => {
   const accessToken = req.cookies["access-token"];
-  try {
-    const data = verify(accessToken, config.SECRET) as any;
-    (req as any).username = data.username;
-  } catch {}
+  // try {
+  //   const data = verify(accessToken, config.SECRET) as any;
+  // } catch {}
+  (req as any).username = "   ";
+
   next();
 });
 
-server.applyMiddleware({ app });
+server.applyMiddleware({ app, cors: corsOptions });
 const httpServer = http.createServer(app);
 server.installSubscriptionHandlers(httpServer);
 
@@ -61,4 +62,10 @@ setInterval(() => {
 
 setInterval(() => {
   pubsub.publish("TIME_DATA", { Time: systemInformation.time() });
+}, 1000);
+
+setInterval(() => {
+  systemInformation.currentLoad().then((data) => {
+    pubsub.publish("CURRENT_CPU_LOAD", { CurrentLoad: data });
+  });
 }, 1000);
