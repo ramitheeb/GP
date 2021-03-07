@@ -344,6 +344,7 @@ const allTypes = gql`
     wIO_sec: Float
     tIO_sec: Float
     ms: Float
+    timestamp: Float
   }
 
   type NetworkInterfacesData {

@@ -1,4 +1,5 @@
 import { gql } from "apollo-server-express";
+import DiskHistoryData from "./DiskHistoryData";
 import allTypes from "./types";
 
 const typeDefs = [
@@ -14,6 +15,12 @@ const typeDefs = [
       MemData: MemData
       CurrentLoad: CurrentLoadData
       OsInfo: OsData
+      DiskData: DisksIoData
+      DiskHistory(
+        toDate: Float
+        fromDate: Float
+        option: String!
+      ): DiskHistoryData
     }
     type Mutation {
       login(username: String!, password: String!): User
@@ -24,9 +31,10 @@ const typeDefs = [
       Time: TimeData
       CpuData: CpuData
       CurrentLoad: CurrentLoadData
+      DiskData: DisksIoData
     }
   `,
-
+  DiskHistoryData,
   allTypes,
 ];
 
