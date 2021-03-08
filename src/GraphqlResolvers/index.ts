@@ -11,7 +11,7 @@ import * as jwt from "jsonwebtoken";
 import { UserInputError, AuthenticationError } from "apollo-server";
 import config from "../config";
 import getDiskData from "./getDiskData";
-import getDiskHistoryData from "./getDiskHistoryData";
+import getDiskHistoryData from "./getDiskReadHistoryData";
 
 const getToken = ({ username, password }) =>
   jwt.sign(
@@ -33,7 +33,7 @@ const resolvers = {
     },
     DiskData: {
       subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("DISK_DATA"),
-    }
+    },
   },
   Query: {
     time: getTimeData,
