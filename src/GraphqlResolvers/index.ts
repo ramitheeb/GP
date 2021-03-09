@@ -14,6 +14,8 @@ import { UserInputError, AuthenticationError } from "apollo-server";
 import config from "../config";
 import getDiskData from "./getDiskData";
 import getDiskHistoryData from "./getDiskHistoryData";
+import getCPUHistoryData from "./getCPUHistoryData";
+import getMemHistoryData from "./getMemHistoryData";
 
 const getToken = ({ username, password }) =>
   jwt.sign(
@@ -44,12 +46,14 @@ const resolvers = {
   Query: {
     time: getTimeData,
     cpu: getCPUData,
+    CPUHistory: getCPUHistoryData,
     cpuCache: getCpuCacheData,
     system: getSystemData,
     bios: getBiosData,
     CpuCurrentSpeedData: getCpuCurrentSpeedData,
     CpuTemperatureData: getCpuTemperatureData,
     MemData: getMemData,
+    MemHistory: getMemHistoryData,
     CurrentLoad: getCurrentLoadData,
     OsInfo: getOsInfo,
     DiskData: getDiskData,

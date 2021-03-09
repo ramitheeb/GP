@@ -4,7 +4,7 @@ import {
   TimestampRange,
 } from "redis-time-series-ts";
 
-const getDiskHistoryData = async (_, args, context) => {
+const getMemHistoryData = async (_, args, context) => {
   if (!context.req.username) return;
 
   const factory = new RedisTimeSeriesFactory();
@@ -12,8 +12,8 @@ const getDiskHistoryData = async (_, args, context) => {
   var resolution: number = 150;
   var startDate: number = 0;
   var endDate: number = 0;
-  var readKey: string;
-  var writeKey: string;
+  var key: string;
+
   switch (args.option) {
     case "Day":
       endDate = new Date().getTime();
@@ -39,46 +39,38 @@ const getDiskHistoryData = async (_, args, context) => {
       return;
   }
 
-  if (endDate - startDate < 2628000000) {
-    readKey = "disk-usage:read:short";
-    writeKey = "disk-usage:write:short";
-  } else if (endDate - startDate < 15770000000) {
-    readKey = "disk-usage:read:medium";
-    writeKey = "disk-usage:write:medium";
-  } else if (endDate - startDate < 126100000000) {
-    readKey = "disk-usage:read:long";
-    writeKey = "disk-usage:write:long";
-  } else return;
+  if (endDate - startDate < 2628000000) key = "mem-usage:used:short";
+  else if (endDate - startDate < 15770000000) key = "mem-usage:used:medium";
+  else if (endDate - startDate < 126100000000) key = "mem-usage:used:long";
+  else return;
 
-  const readSamples = await client.range(
-    readKey,
+  const samples = await client.range(
+    key,
     new TimestampRange(startDate, endDate),
     undefined,
     new Aggregation("AVG", Math.floor((endDate - startDate) / resolution))
   );
 
-  const writeSamples = await client.range(
-    writeKey,
-    new TimestampRange(startDate, endDate),
-    undefined,
-    new Aggregation("AVG", Math.floor((endDate - startDate) / resolution))
-  );
+  const data = [{}];
+  for (let i = 0; i < samples.length; i++) {
+    const element = samples[i];
 
-  const data = readSamples.map((readElement, index) => {
-    const rIO = readElement.getValue();
-    const wIO =
-      index < writeSamples.length - 1 ? writeSamples[index].getValue() : null;
-    return {
-      rIO: rIO,
-      wIO: wIO,
-      tIO: wIO ? rIO + wIO : null,
-      rIO_sec: null,
-      wIO_sec: null,
-      tIO_sec: null,
-      ms: null,
-      timestamp: readElement.getTimestamp(),
+    data[i] = {
+      total: null,
+      free: null,
+      used: element.getValue(),
+      active: null,
+      available: null,
+      buffcache: null,
+      buffers: null,
+      cached: null,
+      slab: null,
+      swaptotal: null,
+      swapused: null,
+      swapfree: null,
+      timestamp: element.getTimestamp(),
     };
-  });
+  }
 
   return {
     fromDate: startDate,
@@ -87,4 +79,4 @@ const getDiskHistoryData = async (_, args, context) => {
   };
 };
 
-export default getDiskHistoryData;
+export default getMemHistoryData;

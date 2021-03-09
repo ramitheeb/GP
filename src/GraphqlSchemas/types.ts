@@ -126,6 +126,7 @@ const allTypes = gql`
     swaptotal: Float
     swapused: Float
     swapfree: Float
+    timestamp: Float
   }
 
   type MemLayoutData {
@@ -450,6 +451,7 @@ const allTypes = gql`
     rawCurrentLoadIdle: Float
     rawCurrentLoadIrq: Float
     cpus: [CurrentLoadCpuData]
+    timestamp: Float
   }
 
   type CurrentLoadCpuData {
