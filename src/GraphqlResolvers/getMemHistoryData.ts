@@ -39,9 +39,9 @@ const getMemHistoryData = async (_, args, context) => {
       return;
   }
 
-  if (endDate - startDate < 2628000000) key = "mem-usage:free:short";
-  else if (endDate - startDate < 15770000000) key = "mem-usage:free:medium";
-  else if (endDate - startDate < 126100000000) key = "mem-usage:free:long";
+  if (endDate - startDate < 2628000000) key = "mem-usage:used:short";
+  else if (endDate - startDate < 15770000000) key = "mem-usage:used:medium";
+  else if (endDate - startDate < 126100000000) key = "mem-usage:used:long";
   else return;
 
   const samples = await client.range(
