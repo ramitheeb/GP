@@ -450,6 +450,7 @@ const allTypes = gql`
     rawCurrentLoadIdle: Float
     rawCurrentLoadIrq: Float
     cpus: [CurrentLoadCpuData]
+    timestamp: Float
   }
 
   type CurrentLoadCpuData {
