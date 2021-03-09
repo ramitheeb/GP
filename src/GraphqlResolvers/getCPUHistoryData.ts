@@ -29,7 +29,7 @@ const getCPUHistoryData = async (_, args, context) => {
       break;
     case "Year":
       endDate = new Date().getTime();
-      startDate = endDate - 5 * 12 * 30 * 24 * 60 * 60 * 1000;
+      startDate = endDate - 4 * 12 * 30 * 24 * 60 * 60 * 1000;
       break;
     case "Custom":
       endDate = args.toDate;
@@ -77,8 +77,8 @@ const getCPUHistoryData = async (_, args, context) => {
   }
 
   return {
-    fromDate: args.fromDate,
-    toDate: args.toDate,
+    fromDate: startDate,
+    toDate: endDate,
     data: data,
   };
 };

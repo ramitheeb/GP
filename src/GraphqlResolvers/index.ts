@@ -15,6 +15,7 @@ import config from "../config";
 import getDiskData from "./getDiskData";
 import getDiskHistoryData from "./getDiskHistoryData";
 import getCPUHistoryData from "./getCPUHistoryData";
+import getMemHistoryData from "./getMemHistoryData";
 
 const getToken = ({ username, password }) =>
   jwt.sign(
@@ -52,6 +53,7 @@ const resolvers = {
     CpuCurrentSpeedData: getCpuCurrentSpeedData,
     CpuTemperatureData: getCpuTemperatureData,
     MemData: getMemData,
+    MemHistory: getMemHistoryData,
     CurrentLoad: getCurrentLoadData,
     OsInfo: getOsInfo,
     DiskData: getDiskData,

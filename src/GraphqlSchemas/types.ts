@@ -126,6 +126,7 @@ const allTypes = gql`
     swaptotal: Float
     swapused: Float
     swapfree: Float
+    timestamp: Float
   }
 
   type MemLayoutData {

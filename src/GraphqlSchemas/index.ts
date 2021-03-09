@@ -1,6 +1,7 @@
 import { gql } from "apollo-server-express";
 import CPUHistoryData from "./CPUHistroyData";
 import DiskHistoryData from "./DiskHistoryData";
+import MemHistoryData from "./MemHistoryData";
 import allTypes from "./types";
 
 const typeDefs = [
@@ -27,6 +28,11 @@ const typeDefs = [
         fromDate: Float
         option: String!
       ): CPUHistoryData
+      MemHistory(
+        toDate: Float
+        fromDate: Float
+        option: String!
+      ): MemHistoryData
     }
     type Mutation {
       login(username: String!, password: String!): User
@@ -42,6 +48,7 @@ const typeDefs = [
   `,
   CPUHistoryData,
   DiskHistoryData,
+  MemHistoryData,
   allTypes,
 ];
 

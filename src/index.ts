@@ -56,7 +56,10 @@ httpServer.listen({ port: 4000 }, () => {
 
 setInterval(() => {
   systemInformation.mem().then((data) => {
-    pubsub.publish("NEW_MEM", { MemData: data });
+    pubsub.publish("NEW_MEM", {
+      MemData: data,
+      timestamp: new Date().getTime(),
+    });
   });
 }, 2000);
 
@@ -64,6 +67,7 @@ setInterval(() => {
   systemInformation.disksIO().then((data) => {
     pubsub.publish("DISK_DATA", {
       DiskData: data,
+      timestamp: new Date().getTime(),
     });
   });
 }, 2000);
@@ -74,6 +78,9 @@ setInterval(() => {
 
 setInterval(() => {
   systemInformation.currentLoad().then((data) => {
-    pubsub.publish("CURRENT_CPU_LOAD", { CurrentLoad: data });
+    pubsub.publish("CURRENT_CPU_LOAD", {
+      CurrentLoad: data,
+      timestamp: new Date().getTime(),
+    });
   });
 }, 1000);
