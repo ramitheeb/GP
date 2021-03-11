@@ -79,6 +79,8 @@ const getDiskHistoryData = async (_, args, context) => {
       timestamp: readElement.getTimestamp(),
     };
   });
+  console.log(startDate);
+  console.log(endDate);
 
   return {
     fromDate: startDate,

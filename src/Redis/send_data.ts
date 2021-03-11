@@ -11,24 +11,26 @@ const sendData = async (client: RedisTimeSeries, key: string) => {
       const sample = new Sample(
         key,
         Math.floor(Math.random() * 48000 + 2000),
-        158377219600 + 86400000 * i + Math.floor(Math.random() * 86400000)
+        1583826179000 + 86400000 * i + Math.floor(Math.random() * 86400000)
       );
       samples.push(sample);
     }
     const multiget = await client.multiAdd(samples);
   }
-  // for (let i = 0; i < 7; i++) {
-  //   let samples: Sample[] = [];
-  //   for (let j = 0; j < sampleRatePerDay; j++) {
-  //     const sample = new Sample(
-  //       key,
-  //       Math.floor(Math.random() * 48000 + 2000),
-  //       1614634147000 + 86400000 * i + Math.floor(Math.random() * 86400000)
-  //     );
-  //     samples.push(sample);
-  //   }
-  //   const multiget = await client.multiAdd(samples);
-  // }
+
+  //Sending data of the past week
+  /* for (let i = 0; i < 7; i++) {
+    let samples: Sample[] = [];
+    for (let j = 0; j < sampleRatePerDay; j++) {
+      const sample = new Sample(
+        key,
+        Math.floor(Math.random() * 48000 + 2000),
+        1614634147000 + 86400000 * i + Math.floor(Math.random() * 86400000)
+      );
+      samples.push(sample);
+    }
+    const multiget = await client.multiAdd(samples);
+  }*/
 
   console.log(`Finished adding at ${key}`);
 };
@@ -46,7 +48,7 @@ const sendDataToDiskTS = async (
       const readValue = Math.floor(Math.random() * 2840);
       const writeValue = Math.floor(Math.random() * 2840);
       const timestamp =
-        158377219600 + 86400000 * i + Math.floor(Math.random() * 86400000);
+        1583772196000 + 86400000 * i + Math.floor(Math.random() * 86400000);
 
       const readSample = new Sample(readKey, readValue, timestamp);
       const writeSample = new Sample(writeKey, writeValue, timestamp);
@@ -73,12 +75,5 @@ const f = async () => {
     "disk-usage:read:runtime",
     "disk-usage:write:runtime"
   );
-  // for (let i = 0; i < metrics.length; i++) {
-  //   const metric = metrics[i];
-  //   const component = components[i];
-  //   const period = "runtime";
-  //   const key = `${metric}:${component}:${period}`;
-  //   await sendDate(client, key);
-  // }
 };
 f();

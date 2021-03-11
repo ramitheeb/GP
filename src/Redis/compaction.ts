@@ -26,6 +26,7 @@ const demoFunc = async () => {
   const metrics = ["cpu-usage", "mem-usage", "disk-usage", "disk-usage"];
   const components = ["current-load", "used", "read", "write"];
   const periods = ["runtime", "short", "medium", "long"];
+
   // 1 min - 10 mins - 1hr
   const timeBuckets = [60000, 600000, 3600000];
   for (let i = 0; i < metrics.length; i++) {
