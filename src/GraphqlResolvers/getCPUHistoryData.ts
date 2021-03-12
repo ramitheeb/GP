@@ -3,33 +3,42 @@ import {
   RedisTimeSeriesFactory,
   TimestampRange,
 } from "redis-time-series-ts";
+import {
+  dayQueryLength,
+  longTimeSeriesPeriod,
+  mediumTimeSeriesPeriod,
+  monthQueryLength,
+  shortTimeSeriesPeriod,
+  weekQueryLength,
+  yearQueryLength,
+} from "../Redis/periods";
 
 const getCPUHistoryData = async (_, args, context) => {
   if (!context.req.username) return;
 
   const factory = new RedisTimeSeriesFactory();
   const client = factory.create();
-  var resolution: number = 150;
-  var startDate: number = 0;
-  var endDate: number = 0;
-  var key: string;
+  let resolution: number = 150;
+  let startDate: number = 0;
+  let endDate: number = 0;
+  let key: string;
 
   switch (args.option) {
     case "Day":
       endDate = new Date().getTime();
-      startDate = endDate - 7 * 24 * 60 * 60 * 1000;
+      startDate = endDate - dayQueryLength;
       break;
     case "Week":
       endDate = new Date().getTime();
-      startDate = endDate - 5 * 7 * 24 * 60 * 60 * 1000;
+      startDate = endDate - weekQueryLength;
       break;
     case "Month":
       endDate = new Date().getTime();
-      startDate = endDate - 12 * 30 * 24 * 60 * 60 * 1000;
+      startDate = endDate - monthQueryLength;
       break;
     case "Year":
       endDate = new Date().getTime();
-      startDate = endDate - 4 * 12 * 30 * 24 * 60 * 60 * 1000;
+      startDate = endDate - yearQueryLength;
       break;
     case "Custom":
       endDate = args.toDate;
@@ -39,10 +48,11 @@ const getCPUHistoryData = async (_, args, context) => {
       return;
   }
 
-  if (endDate - startDate < 2628000000) key = "cpu-usage:current-load:short";
-  else if (endDate - startDate < 15770000000)
+  if (endDate - startDate < shortTimeSeriesPeriod)
+    key = "cpu-usage:current-load:short";
+  else if (endDate - startDate < mediumTimeSeriesPeriod)
     key = "cpu-usage:current-load:medium";
-  else if (endDate - startDate < 126100000000)
+  else if (endDate - startDate < longTimeSeriesPeriod)
     key = "cpu-usage:current-load:long";
   else return;
 
@@ -58,20 +68,7 @@ const getCPUHistoryData = async (_, args, context) => {
     const element = samples[i];
 
     data[i] = {
-      avgLoad: null,
       currentLoad: element.getValue(),
-      currentLoadUser: null,
-      currentLoadSystem: null,
-      currentLoadNice: null,
-      currentLoadIdle: null,
-      currentLoadIrq: null,
-      rawCurrentLoad: null,
-      rawCurrentLoadUser: null,
-      rawCurrentLoadSystem: null,
-      rawCurrentLoadNice: null,
-      rawCurrentLoadIdle: null,
-      rawCurrentLoadIrq: null,
-      cpus: [],
       timestamp: element.getTimestamp(),
     };
   }
