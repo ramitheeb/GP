@@ -17,6 +17,8 @@ import getDiskHistoryData from "./getDiskHistoryData";
 import getCPUHistoryData from "./getCPUHistoryData";
 import getMemHistoryData from "./getMemHistoryData";
 
+import getProcessesData from "./getProcessesData";
+
 const getToken = ({ username, password }) =>
   jwt.sign(
     {
@@ -42,6 +44,9 @@ const resolvers = {
     DiskData: {
       subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("DISK_DATA"),
     },
+    ProcessesData: {
+      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("PROCESSES_DATA"),
+    },
   },
   Query: {
     time: getTimeData,
@@ -58,6 +63,7 @@ const resolvers = {
     OsInfo: getOsInfo,
     DiskData: getDiskData,
     DiskHistory: getDiskHistoryData,
+    ProcessesData: getProcessesData,
   },
   Mutation: {
     login(_, { username, password }, { res }) {

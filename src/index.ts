@@ -51,6 +51,7 @@ httpServer.listen({ port: 4000 }, () => {
   // tslint:disable-next-line:no-console
   console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
   const subPath = server.subscriptionsPath;
+
   console.log(`Subscriptions are at ws://localhost:4000${subPath}`);
 });
 
@@ -82,5 +83,11 @@ setInterval(() => {
     pubsub.publish("CURRENT_CPU_LOAD", {
       CurrentLoad: data,
     });
+  });
+}, 1000);
+
+setInterval(() => {
+  systemInformation.processes().then((data) => {
+    pubsub.publish("PROCESSES_DATA", { ProcessesData: data });
   });
 }, 1000);
