@@ -18,6 +18,7 @@ import getCPUHistoryData from "./getCPUHistoryData";
 import getMemHistoryData from "./getMemHistoryData";
 
 import getProcessesData from "./getProcessesData";
+import { pubsub } from "../pubsub";
 
 const getToken = ({ username, password }) =>
   jwt.sign(
@@ -32,20 +33,19 @@ const getToken = ({ username, password }) =>
 const resolvers = {
   Subscription: {
     MemData: {
-      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("NEW_MEM"),
+      subscribe: () => pubsub.asyncIterator("NEW_MEM"),
     },
     Time: {
-      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("TIME_DATA"),
+      subscribe: () => pubsub.asyncIterator("TIME_DATA"),
     },
     CurrentLoad: {
-      subscribe: (_, __, { pubsub }) =>
-        pubsub.asyncIterator("CURRENT_CPU_LOAD"),
+      subscribe: () => pubsub.asyncIterator("CURRENT_CPU_LOAD"),
     },
     DiskData: {
-      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("DISK_DATA"),
+      subscribe: () => pubsub.asyncIterator("DISK_DATA"),
     },
     ProcessesData: {
-      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator("PROCESSES_DATA"),
+      subscribe: () => pubsub.asyncIterator("PROCESSES_DATA"),
     },
   },
   Query: {

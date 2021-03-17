@@ -1,9 +1,4 @@
 import {
-  Aggregation,
-  RedisTimeSeriesFactory,
-  TimestampRange,
-} from "redis-time-series-ts";
-import {
   dayQueryLength,
   longTimeSeriesPeriod,
   mediumTimeSeriesPeriod,
@@ -12,16 +7,15 @@ import {
   weekQueryLength,
   yearQueryLength,
 } from "../Redis/periods";
+import { CPU_LOAD_TS_KEY, redisReadTSData } from "../Redis/redis_client";
 
 const getCPUHistoryData = async (_, args, context) => {
   if (!context.req.username) return;
 
-  const factory = new RedisTimeSeriesFactory();
-  const client = factory.create();
   let resolution: number = 150;
   let startDate: number = 0;
   let endDate: number = 0;
-  let key: string;
+  let period: string;
 
   switch (args.option) {
     case "Day":
@@ -48,19 +42,18 @@ const getCPUHistoryData = async (_, args, context) => {
       return;
   }
 
-  if (endDate - startDate < shortTimeSeriesPeriod)
-    key = "cpu-usage:current-load:short";
-  else if (endDate - startDate < mediumTimeSeriesPeriod)
-    key = "cpu-usage:current-load:medium";
-  else if (endDate - startDate < longTimeSeriesPeriod)
-    key = "cpu-usage:current-load:long";
+  if (endDate - startDate < shortTimeSeriesPeriod) period = "short";
+  else if (endDate - startDate < mediumTimeSeriesPeriod) period = "medium";
+  else if (endDate - startDate < longTimeSeriesPeriod) period = "long";
   else return;
 
-  const samples = await client.range(
-    key,
-    new TimestampRange(startDate, endDate),
-    undefined,
-    new Aggregation("AVG", Math.floor((endDate - startDate) / resolution))
+  const samples = await redisReadTSData(
+    CPU_LOAD_TS_KEY,
+    "current-load",
+    period,
+    startDate,
+    endDate,
+    resolution
   );
 
   const data = [{}];
