@@ -49,7 +49,7 @@ const resolvers = {
     },
   },
   Query: {
-    time: getTimeData,
+    Time: getTimeData,
     cpu: getCPUData,
     CPUHistory: getCPUHistoryData,
     cpuCache: getCpuCacheData,

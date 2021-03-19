@@ -12,7 +12,7 @@ let nonHistoricRuntimeSamplerTimerId;
 let histiorySamplerTimerId;
 
 const historicRuntimeSampleFrequency = 2000;
-const nonHistoricRuntimeSampleFrequency = 2000;
+const nonHistoricRuntimeSampleFrequency = 1000;
 const historySampleFrequency = 60000;
 
 let memorySubscription = false;

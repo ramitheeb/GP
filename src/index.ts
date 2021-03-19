@@ -12,6 +12,8 @@ import { generalRedisClient, pubsub } from "./pubsub";
 import { startRuntimeSample, stopRuntimeSample } from "./sampler";
 // const pubsub = new PubSub();
 
+generalRedisClient.set("numOfSubs", 0);
+
 const server = new ApolloServer({
   subscriptions: {
     path: "/subscriptions",
