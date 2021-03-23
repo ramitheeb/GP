@@ -1,8 +1,10 @@
 import * as systemInformation from "systeminformation";
 
-const getMemData = (_, __, context) => {
+const getMemData = async (_, __, context) => {
   if (!context.req.username) return;
-  return systemInformation.mem();
+  const data = await systemInformation.mem();
+  data["timestamp"] = new Date().getTime();
+  return data;
 };
 
 export default getMemData;
