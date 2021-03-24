@@ -1,19 +1,13 @@
-import {
-  Aggregation,
-  RedisTimeSeriesFactory,
-  TimestampRange,
-} from "redis-time-series-ts";
+import { DISK_TS_KEY, redisReadTSData } from "../Redis/redis_client";
 
 const getDiskHistoryData = async (_, args, context) => {
   if (!context.req.username) return;
 
-  const factory = new RedisTimeSeriesFactory();
-  const client = factory.create();
   var resolution: number = 150;
   var startDate: number = 0;
   var endDate: number = 0;
-  var readKey: string;
-  var writeKey: string;
+  var period: string;
+
   switch (args.option) {
     case "Day":
       endDate = new Date().getTime();
@@ -40,28 +34,29 @@ const getDiskHistoryData = async (_, args, context) => {
   }
 
   if (endDate - startDate < 2628000000) {
-    readKey = "disk-usage:read:short";
-    writeKey = "disk-usage:write:short";
+    period = "short";
   } else if (endDate - startDate < 15770000000) {
-    readKey = "disk-usage:read:medium";
-    writeKey = "disk-usage:write:medium";
+    period = "medium";
   } else if (endDate - startDate < 126100000000) {
-    readKey = "disk-usage:read:long";
-    writeKey = "disk-usage:write:long";
+    period = "long";
   } else return;
 
-  const readSamples = await client.range(
-    readKey,
-    new TimestampRange(startDate, endDate),
-    undefined,
-    new Aggregation("AVG", Math.floor((endDate - startDate) / resolution))
+  const readSamples = await redisReadTSData(
+    DISK_TS_KEY,
+    "read",
+    period,
+    startDate,
+    endDate,
+    resolution
   );
 
-  const writeSamples = await client.range(
-    writeKey,
-    new TimestampRange(startDate, endDate),
-    undefined,
-    new Aggregation("AVG", Math.floor((endDate - startDate) / resolution))
+  const writeSamples = await redisReadTSData(
+    DISK_TS_KEY,
+    "write",
+    period,
+    startDate,
+    endDate,
+    resolution
   );
 
   const data = readSamples.map((readElement, index) => {

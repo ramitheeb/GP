@@ -7,7 +7,7 @@ import allTypes from "./types";
 const typeDefs = [
   gql`
     type Query {
-      time: TimeData
+      Time: TimeData
       cpu: CpuData
       cpuCache: CpuCacheData
       system: SystemData

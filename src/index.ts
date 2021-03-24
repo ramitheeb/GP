@@ -4,24 +4,52 @@ import * as http from "http";
 import { ApolloServer, gql } from "apollo-server-express";
 import typeDefs from "./GraphqlSchemas";
 import resolvers from "./GraphqlResolvers";
-import { verify } from "jsonwebtoken";
-import config from "./config";
 import * as cookieParser from "cookie-parser";
 import * as cors from "cors";
-import { PubSub } from "graphql-subscriptions";
 import * as systemInformation from "systeminformation";
+import { RedisPubSub } from "graphql-redis-subscriptions";
+import { generalRedisClient, pubsub } from "./pubsub";
+import { startRuntimeSample, stopRuntimeSample } from "./sampler";
+// const pubsub = new PubSub();
 
-const pubsub = new PubSub();
+generalRedisClient.set("numOfSubs", 0);
 
 const server = new ApolloServer({
   subscriptions: {
     path: "/subscriptions",
-    onConnect: (connectionParams, webSocket, context) => {},
-    onDisconnect: (webSocket, context) => {},
+    onConnect: (connectionParams, webSocket, context) => {
+      generalRedisClient
+        .multi()
+        .get("numOfSubs")
+        .incr("numOfSubs")
+        .exec((err, result) => {
+          if (err) {
+            console.log(`Error at onConnect : ${err}`);
+            return;
+          }
+          const numOfSubs = result[0][1];
+
+          if (numOfSubs == 0) startRuntimeSample();
+        });
+    },
+    onDisconnect: (webSocket, context) => {
+      generalRedisClient
+        .multi()
+        .decr("numOfSubs")
+        .get("numOfSubs")
+        .exec((err, result) => {
+          if (err) {
+            console.log(`Error at onDisconnect : ${err}`);
+            return;
+          }
+          const numOfSubs = result[1][1];
+          if (numOfSubs == 0) stopRuntimeSample();
+        });
+    },
   },
   typeDefs,
   resolvers,
-  context: ({ req, res }: any) => ({ req, res, pubsub }),
+  context: ({ req, res }: any) => ({ req, res, RedisPubSub }),
 });
 
 const app = express();
@@ -54,40 +82,3 @@ httpServer.listen({ port: 4000 }, () => {
 
   console.log(`Subscriptions are at ws://localhost:4000${subPath}`);
 });
-
-setInterval(() => {
-  systemInformation.mem().then((data) => {
-    data["timestamp"] = new Date().getTime();
-    pubsub.publish("NEW_MEM", {
-      MemData: data,
-    });
-  });
-}, 2000);
-
-setInterval(() => {
-  systemInformation.disksIO().then((data) => {
-    data["timestamp"] = new Date().getTime();
-    pubsub.publish("DISK_DATA", {
-      DiskData: data,
-    });
-  });
-}, 2000);
-
-setInterval(() => {
-  pubsub.publish("TIME_DATA", { Time: systemInformation.time() });
-}, 1000);
-
-setInterval(() => {
-  systemInformation.currentLoad().then((data) => {
-    data["timestamp"] = new Date().getTime();
-    pubsub.publish("CURRENT_CPU_LOAD", {
-      CurrentLoad: data,
-    });
-  });
-}, 1000);
-
-setInterval(() => {
-  systemInformation.processes().then((data) => {
-    pubsub.publish("PROCESSES_DATA", { ProcessesData: data });
-  });
-}, 1000);
