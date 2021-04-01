@@ -16,7 +16,7 @@ import getDiskData from "./getDiskData";
 import getDiskHistoryData from "./getDiskHistoryData";
 import getCPUHistoryData from "./getCPUHistoryData";
 import getMemHistoryData from "./getMemHistoryData";
-
+import getUsersData from "./getUsersData";
 import getProcessesData from "./getProcessesData";
 import { pubsub } from "../pubsub";
 
@@ -64,6 +64,7 @@ const resolvers = {
     DiskData: getDiskData,
     DiskHistory: getDiskHistoryData,
     ProcessesData: getProcessesData,
+    UsersData: getUsersData,
   },
   Mutation: {
     login(_, { username, password }, { res }) {

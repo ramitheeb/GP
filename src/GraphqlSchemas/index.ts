@@ -19,6 +19,7 @@ const typeDefs = [
       OsInfo: OsData
       DiskData: DisksIoData
       ProcessesData: ProcessesData
+      UsersData: [UserData]
 
       DiskHistory(
         toDate: Float
@@ -46,7 +47,6 @@ const typeDefs = [
       CpuData: CpuData
       CurrentLoad: CurrentLoadData
       DiskData: DisksIoData
-
       ProcessesData: ProcessesData
     }
   `,
