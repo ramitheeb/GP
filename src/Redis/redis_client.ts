@@ -18,7 +18,7 @@ export const redisWriteTSData = (
   data: number,
   date: number
 ) => {
-  console.log(`${metric} ${component} ${period} ${data} ${date}`);
+  // console.log(`${metric} ${component} ${period} ${data} ${date}`);
 
   const sample = new Sample(`${metric}:${component}:${period}`, data, date);
   // console.log(`the sample is ${sample.getValue()}`);

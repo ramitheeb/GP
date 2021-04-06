@@ -24,7 +24,7 @@ const server = new ApolloServer({
         .incr("numOfSubs")
         .exec((err, result) => {
           if (err) {
-            console.log(`Error at onConnect : ${err}`);
+            // console.log(`Error at onConnect : ${err}`);
             return;
           }
           const numOfSubs = result[0][1];
@@ -39,7 +39,7 @@ const server = new ApolloServer({
         .get("numOfSubs")
         .exec((err, result) => {
           if (err) {
-            console.log(`Error at onDisconnect : ${err}`);
+            //console.log(`Error at onDisconnect : ${err}`);
             return;
           }
           const numOfSubs = result[1][1];

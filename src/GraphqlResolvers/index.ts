@@ -19,7 +19,8 @@ import getMemHistoryData from "./getMemHistoryData";
 import getUsersData from "./getUsersData";
 import getProcessesData from "./getProcessesData";
 import { pubsub } from "../pubsub";
-
+import * as sqlite3 from "sqlite3";
+import getAlerts from "./getAlerts";
 const getToken = ({ username, password }) =>
   jwt.sign(
     {
@@ -65,6 +66,7 @@ const resolvers = {
     DiskHistory: getDiskHistoryData,
     ProcessesData: getProcessesData,
     UsersData: getUsersData,
+    Alerts: getAlerts,
   },
   Mutation: {
     login(_, { username, password }, { res }) {
@@ -84,6 +86,18 @@ const resolvers = {
       return {
         id: user.username,
       };
+    },
+    alert(_, { start, end, rangeName, metric, alertName }, { res }) {
+      try {
+        const db = new sqlite3.Database("./database.db");
+        var stmt = db.prepare("INSERT INTO Alerts VALUES (?,?,?,?,?)");
+        stmt.run(start, end, metric, rangeName, alertName);
+        stmt.finalize();
+        db.close();
+      } catch (e) {
+        return false;
+      }
+      return true;
     },
   },
 };

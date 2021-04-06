@@ -42,7 +42,7 @@ const demoFunc = async () => {
       await createTimeSeriesRule(client, srcKey, dstKey, timeBuckets[j - 1]);
     }
   }
-  console.log("Finished creating rules");
+  // console.log("Finished creating rules");
 
   client.disconnect();
 };
