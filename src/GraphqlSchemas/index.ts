@@ -1,7 +1,10 @@
 import { gql } from "apollo-server-express";
 import CPUHistoryData from "./CPUHistroyData";
+import { DemographicGeoStatisticsHistoryData } from "./DemographicHistoryData";
 import DiskHistoryData from "./DiskHistoryData";
+import { EndpointStatisticsHistoryData } from "./EndpointStatisticsHistory";
 import MemHistoryData from "./MemHistoryData";
+import TrafficHistoryData from "./TrafficHistoryData";
 import allTypes from "./types";
 
 const typeDefs = [
@@ -35,6 +38,13 @@ const typeDefs = [
         fromDate: Float
         option: String!
       ): MemHistoryData
+      TrafficHistory(
+        toDate: Float
+        fromDate: Float
+        option: String!
+      ): TrafficHistoryData
+      EndpointStatisticsHistory: EndpointStatisticsHistoryData
+      DemographicGeoStatisticsHistory: DemoGraphicGeoStatisticsHistoryData
     }
     type Mutation {
       login(username: String!, password: String!): User
@@ -53,6 +63,9 @@ const typeDefs = [
   CPUHistoryData,
   DiskHistoryData,
   MemHistoryData,
+  TrafficHistoryData,
+  EndpointStatisticsHistoryData,
+  DemographicGeoStatisticsHistoryData,
   allTypes,
 ];
 

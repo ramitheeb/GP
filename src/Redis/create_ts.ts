@@ -5,37 +5,57 @@ const createDatabase = async (
   client: RedisTimeSeries,
   labels: Label[],
   key: string,
-  retention: number
+  retention: number,
+  duplicationPolicy?: string | undefined
 ) => {
   //Retention of 9 days
-  await client.create(key, labels, retention);
+  await client.create(key, labels, retention, undefined, duplicationPolicy);
 };
 
-const demoFunc = async () => {
+const createForAll = async () => {
   const factory = new RedisTimeSeriesFactory();
   const client = factory.create();
-  const metrics = ["cpu-usage", "mem-usage", "disk-usage", "disk-usage"];
-  const components = ["current-load", "used", "read", "write"];
+  const metrics = [
+    "cpu-usage",
+    "mem-usage",
+    "disk-usage",
+    "disk-usage",
+    "traffic",
+  ];
+  const components = ["current-load", "used", "read", "write", "all"];
   const periods = ["runtime", "short", "medium", "long"];
   // 10 mins - 1 month - 6 months - 4 years
   const retentions = [157700000000, 2628000000, 15770000000, 126100000000];
-  for (let i = 0; i < metrics.length; i++) {
-    const metric = metrics[i];
-    const component = components[i];
-    for (let j = 0; j < periods.length; j++) {
-      const period = periods[j];
-      const retention = retentions[j];
-      const key = `${metric}:${component}:${period}`;
-      const labels = [
-        new Label("Metric", metric),
-        new Label("Component", component),
-        new Label("Period", period),
-      ];
-      await createDatabase(client, labels, key, retention);
-    }
+  const metric = metrics[4];
+  const component = components[4];
+  for (let j = 0; j < periods.length; j++) {
+    const period = periods[j];
+    const retention = retentions[j];
+    const key = `${metric}:${component}:${period}`;
+    const labels = [
+      new Label("Metric", metric),
+      new Label("Component", component),
+      new Label("Period", period),
+    ];
+    await createDatabase(client, labels, key, retention, "SUM");
   }
+  // for (let i = 0; i < metrics.length; i++) {
+  //   const metric = metrics[i];
+  //   const component = components[i];
+  //   for (let j = 0; j < periods.length; j++) {
+  //     const period = periods[j];
+  //     const retention = retentions[j];
+  //     const key = `${metric}:${component}:${period}`;
+  //     const labels = [
+  //       new Label("Metric", metric),
+  //       new Label("Component", component),
+  //       new Label("Period", period),
+  //     ];
+  //     await createDatabase(client, labels, key, retention);
+  //   }
+  // }
   console.log("Finished creating databases");
 
   client.disconnect();
 };
-demoFunc();
+createForAll();

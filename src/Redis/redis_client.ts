@@ -8,6 +8,7 @@ import {
 export const MEMORY_TS_KEY = "mem-usage";
 export const DISK_TS_KEY = "disk-usage";
 export const CPU_LOAD_TS_KEY = "cpu-usage";
+export const TRAFFIC_TS_KEY = "traffic";
 const redisFactory = new RedisTimeSeriesFactory();
 export const redisTSClient = redisFactory.create();
 
@@ -18,7 +19,7 @@ export const redisWriteTSData = (
   data: number,
   date: number
 ) => {
-  console.log(`${metric} ${component} ${period} ${data} ${date}`);
+  // console.log(`${metric} ${component} ${period} ${data} ${date}`);
 
   const sample = new Sample(`${metric}:${component}:${period}`, data, date);
   // console.log(`the sample is ${sample.getValue()}`);

@@ -19,6 +19,9 @@ import getMemHistoryData from "./getMemHistoryData";
 
 import getProcessesData from "./getProcessesData";
 import { pubsub } from "../pubsub";
+import getTrafficHistoryData from "./getTrafficHistoryData";
+import getEndpointStatisticsHistory from "./getEndpointStatisticsHistory";
+import getDemographicStatisticsHistory from "./getDemographicGeoStatisticsData";
 
 const getToken = ({ username, password }) =>
   jwt.sign(
@@ -64,6 +67,9 @@ const resolvers = {
     DiskData: getDiskData,
     DiskHistory: getDiskHistoryData,
     ProcessesData: getProcessesData,
+    TrafficHistory: getTrafficHistoryData,
+    EndpointStatisticsHistory: getEndpointStatisticsHistory,
+    DemographicGeoStatisticsHistory: getDemographicStatisticsHistory,
   },
   Mutation: {
     login(_, { username, password }, { res }) {
