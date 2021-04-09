@@ -8,6 +8,7 @@ import {
 export const MEMORY_TS_KEY = "mem-usage";
 export const DISK_TS_KEY = "disk-usage";
 export const CPU_LOAD_TS_KEY = "cpu-usage";
+export const TRAFFIC_TS_KEY = "traffic";
 const redisFactory = new RedisTimeSeriesFactory();
 export const redisTSClient = redisFactory.create();
 

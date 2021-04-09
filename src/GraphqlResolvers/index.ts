@@ -18,6 +18,9 @@ import getMemHistoryData from "./MemoryDataResolvers/getMemHistoryData";
 import getUsersData from "./SystemDataResolvers/getUsersData";
 import getProcessesData from "./LoadDataResolvers/getProcessesData";
 import { pubsub } from "../pubsub";
+import getTrafficHistoryData from "./getTrafficHistoryData";
+import getEndpointStatisticsHistory from "./getEndpointStatisticsHistory";
+import getDemographicStatisticsHistory from "./getDemographicGeoStatisticsData";
 import * as sqlite3 from "sqlite3";
 import getAlerts from "./getAlerts";
 import getDockerInfo from "./DockerDataResolvers/getDockerInfo";
@@ -67,6 +70,9 @@ const resolvers = {
     DiskData: getDiskData,
     DiskHistory: getDiskHistoryData,
     ProcessesData: getProcessesData,
+    TrafficHistory: getTrafficHistoryData,
+    EndpointStatisticsHistory: getEndpointStatisticsHistory,
+    DemographicGeoStatisticsHistory: getDemographicStatisticsHistory,
     UsersData: getUsersData,
     Alerts: getAlerts,
     DockerInfo: getDockerInfo,
