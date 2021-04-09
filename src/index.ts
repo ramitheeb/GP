@@ -58,6 +58,7 @@ var corsOptions = {
   origin: "http://localhost:3006",
   credentials: true,
 };
+
 app.use(cors(corsOptions));
 app.use(cookieParser());
 
@@ -66,7 +67,7 @@ app.use((req, _, next) => {
   // try {
   //   const data = verify(accessToken, config.SECRET) as any;
   //   (req as any).username = data.username;
-  // } catch { }
+  // } catch {}
   (req as any).username = "string";
   next();
 });
@@ -76,9 +77,9 @@ const httpServer = http.createServer(app);
 server.installSubscriptionHandlers(httpServer);
 
 httpServer.listen({ port: 4000 }, () => {
-  // tslint:disable-next-line:no-console
   console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
   const subPath = server.subscriptionsPath;
-
   console.log(`Subscriptions are at ws://localhost:4000${subPath}`);
 });
+
+systemInformation.dockerContainers().then((date) => console.log(date));

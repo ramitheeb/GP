@@ -1,26 +1,28 @@
-import getCPUData from "./getCPUData";
-import getTimeData from "./getTimeData";
-import getCpuCacheData from "./getCpuCacheData";
-import getSystemData from "./getSystemData";
-import getBiosData from "./getBiosData";
-import getCpuCurrentSpeedData from "./getCpuCurrentSpeedData";
-import getCpuTemperatureData from "./getCpuTemperatureData";
-import getMemData from "./getMemData";
-import getCurrentLoadData from "./getCurrentLoadData";
-import getOsInfo from "./getOsInfo";
-import * as bcrypt from "bcryptjs";
+import getCPUData from "./CPUDataResolvers/getCPUData";
+import getTimeData from "./SystemDataResolvers/getTimeData";
+import getCpuCacheData from "./CPUDataResolvers/getCpuCacheData";
+import getSystemData from "./SystemDataResolvers/getSystemData";
+import getBiosData from "./SystemDataResolvers/getBiosData";
+import getCpuCurrentSpeedData from "./CPUDataResolvers/getCpuCurrentSpeedData";
+import getCpuTemperatureData from "./CPUDataResolvers/getCpuTemperatureData";
+import getMemData from "./MemoryDataResolvers/getMemData";
+import getCurrentLoadData from "./LoadDataResolvers/getCurrentLoadData";
+import getOsInfo from "./SystemDataResolvers/getOsInfo";
 import * as jwt from "jsonwebtoken";
-import { UserInputError, AuthenticationError } from "apollo-server";
+import { AuthenticationError } from "apollo-server";
 import config from "../config";
-import getDiskData from "./getDiskData";
-import getDiskHistoryData from "./getDiskHistoryData";
-import getCPUHistoryData from "./getCPUHistoryData";
-import getMemHistoryData from "./getMemHistoryData";
-import getUsersData from "./getUsersData";
-import getProcessesData from "./getProcessesData";
+import getDiskData from "./DiskDataResolvers/getDiskData";
+import getDiskHistoryData from "./DiskDataResolvers/getDiskHistoryData";
+import getCPUHistoryData from "./CPUDataResolvers/getCPUHistoryData";
+import getMemHistoryData from "./MemoryDataResolvers/getMemHistoryData";
+import getUsersData from "./SystemDataResolvers/getUsersData";
+import getProcessesData from "./LoadDataResolvers/getProcessesData";
 import { pubsub } from "../pubsub";
 import * as sqlite3 from "sqlite3";
 import getAlerts from "./getAlerts";
+import getDockerInfo from "./DockerDataResolvers/getDockerInfo";
+import getDockerContainersData from "./DockerDataResolvers/getDockerContainersData";
+
 const getToken = ({ username, password }) =>
   jwt.sign(
     {
@@ -67,6 +69,8 @@ const resolvers = {
     ProcessesData: getProcessesData,
     UsersData: getUsersData,
     Alerts: getAlerts,
+    DockerInfo: getDockerInfo,
+    DockerContainersData: getDockerContainersData,
   },
   Mutation: {
     login(_, { username, password }, { res }) {
@@ -87,12 +91,20 @@ const resolvers = {
         id: user.username,
       };
     },
-    alert(_, { start, end, rangeName, metric, alertName }, { res }) {
+    alert(_, { start, end, rangeName, metric, alertName, id }, { res }) {
       try {
         const db = new sqlite3.Database("./database.db");
-        var stmt = db.prepare("INSERT INTO Alerts VALUES (?,?,?,?,?)");
-        stmt.run(start, end, metric, rangeName, alertName);
-        stmt.finalize();
+        if (id === -1) {
+          var stmt = db.prepare("INSERT INTO Alerts VALUES (?,?,?,?,?,?)");
+          stmt.run(null, start, end, metric, rangeName, alertName);
+          stmt.finalize();
+        } else if (id >= 0) {
+          var inputData = [start, end, metric, rangeName, alertName, id];
+          db.run(
+            "UPDATE Alerts SET start=?, end=?,  metric=?,  rangeName=?,  AlertName=?  WHERE id=?",
+            inputData
+          );
+        }
         db.close();
       } catch (e) {
         return false;

@@ -8,7 +8,7 @@ const getAlerts = (_, __, context) => {
     const response: any = [];
 
     db.each(
-      "SELECT start,end,metric,rangeName,AlertName as alertName  FROM Alerts",
+      "SELECT id,start,end,metric,rangeName,AlertName as alertName  FROM Alerts",
       function (err, row) {
         if (err) reject(err);
         else response.push(row);

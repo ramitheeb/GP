@@ -3,7 +3,7 @@ import {
   RedisTimeSeriesFactory,
   TimestampRange,
 } from "redis-time-series-ts";
-import { MEMORY_TS_KEY, redisReadTSData } from "../Redis/redis_client";
+import { MEMORY_TS_KEY, redisReadTSData } from "../../Redis/redis_client";
 
 const getMemHistoryData = async (_, args, context) => {
   if (!context.req.username) return;

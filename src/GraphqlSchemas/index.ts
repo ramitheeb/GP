@@ -1,8 +1,6 @@
 import { gql } from "apollo-server-express";
-import CPUHistoryData from "./CPUHistroyData";
-import DiskHistoryData from "./DiskHistoryData";
-import MemHistoryData from "./MemHistoryData";
-import allTypes from "./types";
+import HistoryDataTypes from "./HistoryDataTypes";
+import SystemInformationTypes from "./SystemInformationTypes";
 
 const typeDefs = [
   gql`
@@ -21,23 +19,27 @@ const typeDefs = [
       ProcessesData: ProcessesData
       Alerts: [Alert]
       UsersData: [UserData]
-
+      DockerInfo: DockerInfoData
+      DockerContainersData: [DockerContainerData]
       DiskHistory(
         toDate: Float
         fromDate: Float
         option: String!
       ): DiskHistoryData
+
       CPUHistory(
         toDate: Float
         fromDate: Float
         option: String!
       ): CPUHistoryData
+
       MemHistory(
         toDate: Float
         fromDate: Float
         option: String!
       ): MemHistoryData
     }
+
     type Mutation {
       login(username: String!, password: String!): User
       alert(
@@ -46,8 +48,10 @@ const typeDefs = [
         rangeName: String!
         metric: String!
         alertName: String!
+        id: Float!
       ): Boolean
     }
+
     type Subscription {
       MemData: MemData
       Time: TimeData
@@ -57,10 +61,8 @@ const typeDefs = [
       ProcessesData: ProcessesData
     }
   `,
-  CPUHistoryData,
-  DiskHistoryData,
-  MemHistoryData,
-  allTypes,
+  HistoryDataTypes,
+  SystemInformationTypes,
 ];
 
 export default typeDefs;

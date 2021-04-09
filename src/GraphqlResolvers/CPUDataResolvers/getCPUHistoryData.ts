@@ -6,8 +6,8 @@ import {
   shortTimeSeriesPeriod,
   weekQueryLength,
   yearQueryLength,
-} from "../Redis/periods";
-import { CPU_LOAD_TS_KEY, redisReadTSData } from "../Redis/redis_client";
+} from "../../Redis/periods";
+import { CPU_LOAD_TS_KEY, redisReadTSData } from "../../Redis/redis_client";
 
 const getCPUHistoryData = async (_, args, context) => {
   if (!context.req.username) return;

@@ -1,4 +1,4 @@
-import { DISK_TS_KEY, redisReadTSData } from "../Redis/redis_client";
+import { DISK_TS_KEY, redisReadTSData } from "../../Redis/redis_client";
 
 const getDiskHistoryData = async (_, args, context) => {
   if (!context.req.username) return;

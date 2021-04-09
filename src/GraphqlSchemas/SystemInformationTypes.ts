@@ -7,6 +7,7 @@ const allTypes = gql`
     rangeName: String!
     metric: String!
     alertName: String!
+    id: Float!
   }
   type User {
     id: ID!
