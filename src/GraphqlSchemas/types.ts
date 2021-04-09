@@ -727,6 +727,21 @@ const allTypes = gql`
     memLayout: [MemLayoutData]
     diskLayout: [DiskLayoutData]
   }
+
+  type TrafficData {
+    traffic: Float
+    timestamp: Float
+  }
+
+  type EndpointStatistics {
+    endpoint: String
+    requestCount: Int
+  }
+
+  type DemographicGeoStatistics {
+    country: String
+    requestCount: Int
+  }
 `;
 
 export default allTypes;

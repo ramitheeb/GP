@@ -19,6 +19,9 @@ import getMemHistoryData from "./getMemHistoryData";
 import getUsersData from "./getUsersData";
 import getProcessesData from "./getProcessesData";
 import { pubsub } from "../pubsub";
+import getTrafficHistoryData from "./getTrafficHistoryData";
+import getEndpointStatisticsHistory from "./getEndpointStatisticsHistory";
+import getDemographicStatisticsHistory from "./getDemographicGeoStatisticsData";
 import * as sqlite3 from "sqlite3";
 import getAlerts from "./getAlerts";
 const getToken = ({ username, password }) =>
@@ -65,6 +68,9 @@ const resolvers = {
     DiskData: getDiskData,
     DiskHistory: getDiskHistoryData,
     ProcessesData: getProcessesData,
+    TrafficHistory: getTrafficHistoryData,
+    EndpointStatisticsHistory: getEndpointStatisticsHistory,
+    DemographicGeoStatisticsHistory: getDemographicStatisticsHistory,
     UsersData: getUsersData,
     Alerts: getAlerts,
   },
