@@ -104,5 +104,8 @@ dist
 .tern-port
 redis-stable/
 redis-stable.tar.gz
-redis/appendonly.aof
-redis/dump.rdb
+redis/
+
+
+dump.rdb
+redis/6379.conf

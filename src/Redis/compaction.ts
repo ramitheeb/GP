@@ -65,6 +65,7 @@ const compactForAll = async () => {
   // }
   console.log("Finished creating rules");
 
+
   client.disconnect();
 };
 compactForAll();

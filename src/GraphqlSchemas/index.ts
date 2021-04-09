@@ -22,6 +22,8 @@ const typeDefs = [
       OsInfo: OsData
       DiskData: DisksIoData
       ProcessesData: ProcessesData
+      Alerts: [Alert]
+      UsersData: [UserData]
 
       DiskHistory(
         toDate: Float
@@ -48,15 +50,20 @@ const typeDefs = [
     }
     type Mutation {
       login(username: String!, password: String!): User
+      alert(
+        start: Float!
+        end: Float!
+        rangeName: String!
+        metric: String!
+        alertName: String!
+      ): Boolean
     }
-
     type Subscription {
       MemData: MemData
       Time: TimeData
       CpuData: CpuData
       CurrentLoad: CurrentLoadData
       DiskData: DisksIoData
-
       ProcessesData: ProcessesData
     }
   `,

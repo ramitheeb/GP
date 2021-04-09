@@ -1,6 +1,13 @@
 import { gql } from "apollo-server-express";
 
 const allTypes = gql`
+  type Alert {
+    start: Float!
+    end: Float!
+    rangeName: String!
+    metric: String!
+    alertName: String!
+  }
   type User {
     id: ID!
     username: String!

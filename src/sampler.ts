@@ -61,13 +61,13 @@ const historicRuntimeSample = async () => {
   systemInformation.currentLoad().then((data) => {
     const timestamp = new Date().getTime();
     if (data.currentLoad === undefined) {
-      console.log(
-        ` \x1b[32m current load is undefined :\n${JSON.stringify(
-          data,
-          null,
-          4
-        )}`
-      );
+      // console.log(
+      //   ` \x1b[32m current load is undefined :\n${JSON.stringify(
+      //     data,
+      //     null,
+      //     4
+      //   )}`
+      // );
       return;
     }
     data["timestamp"] = timestamp;
@@ -83,9 +83,9 @@ const historicRuntimeSample = async () => {
       "runtime",
       data.currentLoad,
       timestamp
-    ).catch((reason) =>
-      console.log(`\x1b[31m error at redisWriteTSData : ${reason}`)
-    );
+    ).catch((reason) => {
+      //     console.log(`\x1b[31m error at redisWriteTSData : ${reason}`);
+    });
   });
 };
 
