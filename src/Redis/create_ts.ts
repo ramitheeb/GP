@@ -26,34 +26,22 @@ const createForAll = async () => {
   const periods = ["runtime", "short", "medium", "long"];
   // 10 mins - 1 month - 6 months - 4 years
   const retentions = [157700000000, 2628000000, 15770000000, 126100000000];
-  const metric = metrics[4];
-  const component = components[4];
-  for (let j = 0; j < periods.length; j++) {
-    const period = periods[j];
-    const retention = retentions[j];
-    const key = `${metric}:${component}:${period}`;
-    const labels = [
-      new Label("Metric", metric),
-      new Label("Component", component),
-      new Label("Period", period),
-    ];
-    await createDatabase(client, labels, key, retention, "SUM");
+  for (let i = 0; i < metrics.length; i++) {
+    const metric = metrics[i];
+    const component = components[i];
+    for (let j = 0; j < periods.length; j++) {
+      const period = periods[j];
+      const retention = retentions[j];
+      const key = `${metric}:${component}:${period}`;
+      const labels = [
+        new Label("Metric", metric),
+        new Label("Component", component),
+        new Label("Period", period),
+      ];
+      const duplicationPolicy = metric === "traffic" ? "SUM" : undefined;
+      await createDatabase(client, labels, key, retention, duplicationPolicy);
+    }
   }
-  // for (let i = 0; i < metrics.length; i++) {
-  //   const metric = metrics[i];
-  //   const component = components[i];
-  //   for (let j = 0; j < periods.length; j++) {
-  //     const period = periods[j];
-  //     const retention = retentions[j];
-  //     const key = `${metric}:${component}:${period}`;
-  //     const labels = [
-  //       new Label("Metric", metric),
-  //       new Label("Component", component),
-  //       new Label("Period", period),
-  //     ];
-  //     await createDatabase(client, labels, key, retention);
-  //   }
-  // }
   console.log("Finished creating databases");
 
   client.disconnect();
