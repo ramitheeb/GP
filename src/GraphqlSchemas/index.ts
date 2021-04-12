@@ -1,13 +1,10 @@
 import { gql } from "apollo-server-express";
 import HistoryDataTypes from "./HistoryDataTypes";
 import SystemInformationTypes from "./SystemInformationTypes";
-import CPUHistoryData from "./CPUHistroyData";
 import { DemographicGeoStatisticsHistoryData } from "./DemographicHistoryData";
-import DiskHistoryData from "./DiskHistoryData";
 import { EndpointStatisticsHistoryData } from "./EndpointStatisticsHistory";
-import MemHistoryData from "./MemHistoryData";
 import TrafficHistoryData from "./TrafficHistoryData";
-import allTypes from "./types";
+import allTypes from "./SystemInformationTypes";
 
 const typeDefs = [
   gql`
@@ -77,9 +74,7 @@ const typeDefs = [
   `,
   HistoryDataTypes,
   SystemInformationTypes,
-  CPUHistoryData,
-  DiskHistoryData,
-  MemHistoryData,
+  HistoryDataTypes,
   TrafficHistoryData,
   EndpointStatisticsHistoryData,
   DemographicGeoStatisticsHistoryData,
