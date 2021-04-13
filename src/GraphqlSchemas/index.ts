@@ -4,6 +4,7 @@ import SystemInformationTypes from "./SystemInformationTypes";
 import { DemographicGeoStatisticsHistoryData } from "./DemographicHistoryData";
 import { EndpointStatisticsHistoryData } from "./EndpointStatisticsHistory";
 import TrafficHistoryData from "./TrafficHistoryData";
+import allTypes from "./SystemInformationTypes";
 
 const typeDefs = [
   gql`
@@ -77,6 +78,7 @@ const typeDefs = [
   `,
   HistoryDataTypes,
   SystemInformationTypes,
+  HistoryDataTypes,
   TrafficHistoryData,
   EndpointStatisticsHistoryData,
   DemographicGeoStatisticsHistoryData,
