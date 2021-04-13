@@ -25,7 +25,8 @@ import * as sqlite3 from "sqlite3";
 import getAlerts from "./getAlerts";
 import getDockerInfo from "./DockerDataResolvers/getDockerInfo";
 import getDockerContainersData from "./DockerDataResolvers/getDockerContainersData";
-
+import GraphQLJSON, { GraphQLJSONObject } from "graphql-type-json";
+import getDockerImageData from "./DockerDataResolvers/getDockerImageData";
 const getToken = ({ username, password }) =>
   jwt.sign(
     {
@@ -37,6 +38,9 @@ const getToken = ({ username, password }) =>
   );
 
 const resolvers = {
+  JSON: GraphQLJSON,
+  JSONObject: GraphQLJSONObject,
+
   Subscription: {
     MemData: {
       subscribe: () => pubsub.asyncIterator("NEW_MEM"),
@@ -52,6 +56,9 @@ const resolvers = {
     },
     ProcessesData: {
       subscribe: () => pubsub.asyncIterator("PROCESSES_DATA"),
+    },
+    containerStatus: {
+      subscribe: () => pubsub.asyncIterator("CONTAINER_STATUS"),
     },
   },
   Query: {
@@ -77,6 +84,7 @@ const resolvers = {
     Alerts: getAlerts,
     DockerInfo: getDockerInfo,
     DockerContainersData: getDockerContainersData,
+    DockerImageData: getDockerImageData,
   },
   Mutation: {
     login(_, { username, password }, { res }) {

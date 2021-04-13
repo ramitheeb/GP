@@ -82,4 +82,4 @@ httpServer.listen({ port: 4000 }, () => {
   console.log(`Subscriptions are at ws://localhost:4000${subPath}`);
 });
 
-systemInformation.dockerContainers().then((date) => console.log(date));
+//systemInformation.dockerContainers().then((date) => console.log(date));

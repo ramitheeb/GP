@@ -1,13 +1,9 @@
 import { gql } from "apollo-server-express";
 import HistoryDataTypes from "./HistoryDataTypes";
 import SystemInformationTypes from "./SystemInformationTypes";
-import CPUHistoryData from "./CPUHistroyData";
 import { DemographicGeoStatisticsHistoryData } from "./DemographicHistoryData";
-import DiskHistoryData from "./DiskHistoryData";
 import { EndpointStatisticsHistoryData } from "./EndpointStatisticsHistory";
-import MemHistoryData from "./MemHistoryData";
 import TrafficHistoryData from "./TrafficHistoryData";
-import allTypes from "./types";
 
 const typeDefs = [
   gql`
@@ -28,6 +24,7 @@ const typeDefs = [
       UsersData: [UserData]
       DockerInfo: DockerInfoData
       DockerContainersData: [DockerContainerData]
+      DockerImageData: [DockerImageData]
       DiskHistory(
         toDate: Float
         fromDate: Float
@@ -45,11 +42,13 @@ const typeDefs = [
         fromDate: Float
         option: String!
       ): MemHistoryData
+
       TrafficHistory(
         toDate: Float
         fromDate: Float
         option: String!
       ): TrafficHistoryData
+
       EndpointStatisticsHistory: EndpointStatisticsHistoryData
       DemographicGeoStatisticsHistory: DemoGraphicGeoStatisticsHistoryData
     }
@@ -73,17 +72,14 @@ const typeDefs = [
       CurrentLoad: CurrentLoadData
       DiskData: DisksIoData
       ProcessesData: ProcessesData
+      containerStatus: [DockerContainerStatsData]
     }
   `,
   HistoryDataTypes,
   SystemInformationTypes,
-  CPUHistoryData,
-  DiskHistoryData,
-  MemHistoryData,
   TrafficHistoryData,
   EndpointStatisticsHistoryData,
   DemographicGeoStatisticsHistoryData,
-  allTypes,
 ];
 
 export default typeDefs;

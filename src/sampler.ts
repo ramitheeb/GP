@@ -26,6 +26,7 @@ const DISK_SUBSCRIPTION_NAME = "DISK_DATA";
 const TIME_SUBSCRIPTION_NAME = "TIME_DATA";
 const CPU_LOAD_SUBSCRIPTION_NAME = "CURRENT_CPU_LOAD";
 const PROCESS_DATA_SUBSCRIPTION_NAME = "PROCESSES_DATA";
+const CONTAINER_STATUS_SUBSCRIPTION_NAME = "CONTAINER_STATUS";
 
 const redisSubscriptionCheckClient = new Redis();
 
@@ -101,6 +102,14 @@ const nonHistoricRuntimeSample = async () => {
   if (subscriptionsList.includes(PROCESS_DATA_SUBSCRIPTION_NAME)) {
     systemInformation.processes().then((data) => {
       pubsub.publish(PROCESS_DATA_SUBSCRIPTION_NAME, { ProcessesData: data });
+    });
+  }
+  //  console.log(subscriptionsList);
+  if (subscriptionsList.includes(CONTAINER_STATUS_SUBSCRIPTION_NAME)) {
+    systemInformation.dockerContainerStats("*").then((data) => {
+      pubsub.publish(CONTAINER_STATUS_SUBSCRIPTION_NAME, {
+        containerStatus: data,
+      });
     });
   }
 };

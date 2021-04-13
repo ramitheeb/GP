@@ -1,6 +1,9 @@
 import { gql } from "apollo-server-express";
 
 const allTypes = gql`
+  scalar JSON
+  scalar JSONObject
+
   type Alert {
     start: Float!
     end: Float!
@@ -619,10 +622,31 @@ const allTypes = gql`
     netIO: netIODate
     blockIO: blockIOData
     restartCount: Float
-    cpuStats: String
-    precpuStats: String
-    memoryStats: String
-    networks: String
+    cpuStats: JSONObject
+    precpuStats: JSONObject
+    memoryStats: JSONObject
+    networks: JSONObject
+  }
+
+  interface DockerImageData {
+    id: String
+    container: String
+    comment: String
+    os: String
+    architecture: String
+    parent: String
+    dockerVersion: String
+    size: Float
+    sharedSize: Float
+    virtualSize: Float
+    author: String
+    created: Float
+    containerConfig: JSONObject
+    graphDriver: JSONObject
+    repoDigests: JSONObject
+    repoTags: JSONObject
+    config: JSONObject
+    rootFS: JSONObject
   }
 
   type VboxInfoData {
