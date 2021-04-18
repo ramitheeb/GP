@@ -9,7 +9,7 @@ import getMemData from "./MemoryDataResolvers/getMemData";
 import getCurrentLoadData from "./LoadDataResolvers/getCurrentLoadData";
 import getOsInfo from "./SystemDataResolvers/getOsInfo";
 import * as jwt from "jsonwebtoken";
-import { AuthenticationError } from "apollo-server";
+import { AuthenticationError, withFilter } from "apollo-server";
 import config from "../config";
 import getDiskData from "./DiskDataResolvers/getDiskData";
 import getDiskHistoryData from "./DiskDataResolvers/getDiskHistoryData";
@@ -27,6 +27,7 @@ import getDockerInfo from "./DockerDataResolvers/getDockerInfo";
 import getDockerContainersData from "./DockerDataResolvers/getDockerContainersData";
 import GraphQLJSON, { GraphQLJSONObject } from "graphql-type-json";
 import getDockerImageData from "./DockerDataResolvers/getDockerImageData";
+import getContainerStatus from "./DockerDataResolvers/getContainerStatus";
 const getToken = ({ username, password }) =>
   jwt.sign(
     {
@@ -58,7 +59,12 @@ const resolvers = {
       subscribe: () => pubsub.asyncIterator("PROCESSES_DATA"),
     },
     containerStatus: {
-      subscribe: () => pubsub.asyncIterator("CONTAINER_STATUS"),
+      subscribe: withFilter(
+        () => pubsub.asyncIterator("CONTAINER_STATUS"),
+        (payload, variables) => {
+          return payload.containerStatus.id === variables.id;
+        }
+      ),
     },
   },
   Query: {
@@ -85,6 +91,7 @@ const resolvers = {
     DockerInfo: getDockerInfo,
     DockerContainersData: getDockerContainersData,
     DockerImageData: getDockerImageData,
+    containerStatus: getContainerStatus,
   },
   Mutation: {
     login(_, { username, password }, { res }) {

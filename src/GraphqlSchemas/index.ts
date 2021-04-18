@@ -4,7 +4,6 @@ import SystemInformationTypes from "./SystemInformationTypes";
 import { DemographicGeoStatisticsHistoryData } from "./DemographicHistoryData";
 import { EndpointStatisticsHistoryData } from "./EndpointStatisticsHistory";
 import TrafficHistoryData from "./TrafficHistoryData";
-import allTypes from "./SystemInformationTypes";
 
 const typeDefs = [
   gql`
@@ -26,6 +25,8 @@ const typeDefs = [
       DockerInfo: DockerInfoData
       DockerContainersData: [DockerContainerData]
       DockerImageData: [DockerImageData]
+      containerStatus(id: String!): [DockerContainerStatsData]
+
       DiskHistory(
         toDate: Float
         fromDate: Float
@@ -73,7 +74,7 @@ const typeDefs = [
       CurrentLoad: CurrentLoadData
       DiskData: DisksIoData
       ProcessesData: ProcessesData
-      containerStatus: [DockerContainerStatsData]
+      containerStatus(id: String!): DockerContainerStatsData
     }
   `,
   HistoryDataTypes,

@@ -626,9 +626,10 @@ const allTypes = gql`
     precpuStats: JSONObject
     memoryStats: JSONObject
     networks: JSONObject
+    timestamp: Float
   }
 
-  interface DockerImageData {
+  type DockerImageData {
     id: String
     container: String
     comment: String
@@ -643,8 +644,8 @@ const allTypes = gql`
     created: Float
     containerConfig: JSONObject
     graphDriver: JSONObject
-    repoDigests: JSONObject
-    repoTags: JSONObject
+    repoDigests: [String]
+    repoTags: [String]
     config: JSONObject
     rootFS: JSONObject
   }

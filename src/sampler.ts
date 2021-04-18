@@ -107,8 +107,11 @@ const nonHistoricRuntimeSample = async () => {
   //  console.log(subscriptionsList);
   if (subscriptionsList.includes(CONTAINER_STATUS_SUBSCRIPTION_NAME)) {
     systemInformation.dockerContainerStats("*").then((data) => {
-      pubsub.publish(CONTAINER_STATUS_SUBSCRIPTION_NAME, {
-        containerStatus: data,
+      data.forEach((item) => {
+        item["timestamp"] = new Date().getTime();
+        pubsub.publish(CONTAINER_STATUS_SUBSCRIPTION_NAME, {
+          containerStatus: item,
+        });
       });
     });
   }
