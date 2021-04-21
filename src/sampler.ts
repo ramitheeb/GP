@@ -13,13 +13,7 @@ let histiorySamplerTimerId;
 
 const historicRuntimeSampleFrequency = 2000;
 const nonHistoricRuntimeSampleFrequency = 1000;
-const historySampleFrequency = 60000;
-
-let memorySubscription = false;
-let diskSubscription = false;
-let timeSubscription = false;
-let currentLoadSubscription = false;
-let processDataSubscription = false;
+const historySampleFrequency = 1000;
 
 const MEM_SUBSCRIPTION_NAME = "NEW_MEM";
 const DISK_SUBSCRIPTION_NAME = "DISK_DATA";
@@ -90,6 +84,33 @@ const historicRuntimeSample = async () => {
   });
 };
 
+const historicNonRuntimeSample = async () => {
+  systemInformation.mem().then((data) => {
+    const timestamp = new Date().getTime();
+    data["timestamp"] = timestamp;
+    redisWriteTSData(MEMORY_TS_KEY, "used", "runtime", data.used, timestamp);
+  });
+
+  systemInformation.disksIO().then((data) => {
+    const timestamp = new Date().getTime();
+    data["timestamp"] = timestamp;
+    redisWriteTSData(DISK_TS_KEY, "read", "runtime", data.rIO, timestamp);
+    redisWriteTSData(DISK_TS_KEY, "write", "runtime", data.wIO, timestamp);
+  });
+
+  systemInformation.currentLoad().then((data) => {
+    const timestamp = new Date().getTime();
+    data["timestamp"] = timestamp;
+    redisWriteTSData(
+      CPU_LOAD_TS_KEY,
+      "current-load",
+      "runtime",
+      data.currentLoad,
+      timestamp
+    ).catch((reason) => {});
+  });
+};
+
 const nonHistoricRuntimeSample = async () => {
   const subscriptionsList: String[] = await redisSubscriptionCheckClient.send_command(
     "PUBSUB",
@@ -104,7 +125,6 @@ const nonHistoricRuntimeSample = async () => {
       pubsub.publish(PROCESS_DATA_SUBSCRIPTION_NAME, { ProcessesData: data });
     });
   }
-  //  console.log(subscriptionsList);
   if (subscriptionsList.includes(CONTAINER_STATUS_SUBSCRIPTION_NAME)) {
     systemInformation.dockerContainerStats("*").then((data) => {
       data.forEach((item) => {
@@ -126,15 +146,21 @@ export const startRuntimeSample = () => {
     nonHistoricRuntimeSample,
     nonHistoricRuntimeSampleFrequency
   );
+  clearInterval(histiorySamplerTimerId);
 };
 
 export const stopRuntimeSample = () => {
+  histiorySamplerTimerId = setInterval(
+    historicNonRuntimeSample,
+    historySampleFrequency
+  );
   clearInterval(nonHistoricRuntimeSamplerTimerId);
   clearInterval(historicRuntimeSamplerTimerId);
 };
 
-/* TO-DO 
-
--> write history sampling function
-
-*/
+export const startSampling = () => {
+  histiorySamplerTimerId = setInterval(
+    historicNonRuntimeSample,
+    historySampleFrequency
+  );
+};

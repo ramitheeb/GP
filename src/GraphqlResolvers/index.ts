@@ -116,13 +116,13 @@ const resolvers = {
       try {
         const db = new sqlite3.Database("./database.db");
         if (id === -1) {
-          var stmt = db.prepare("INSERT INTO Alerts VALUES (?,?,?,?,?,?)");
-          stmt.run(null, start, end, metric, rangeName, alertName);
+          var stmt = db.prepare("INSERT INTO Alerts VALUES (?,?,?,?,?,?,?)");
+          stmt.run(null, "s", start, end, metric, rangeName, alertName);
           stmt.finalize();
         } else if (id >= 0) {
-          var inputData = [start, end, metric, rangeName, alertName, id];
+          var inputData = ["s", start, end, metric, rangeName, alertName, id];
           db.run(
-            "UPDATE Alerts SET start=?, end=?,  metric=?,  rangeName=?,  AlertName=?  WHERE id=?",
+            "UPDATE Alerts SET type =?, start=?, end=?,  metric=?,  rangeName=?,  AlertName=?  WHERE id=?",
             inputData
           );
         }

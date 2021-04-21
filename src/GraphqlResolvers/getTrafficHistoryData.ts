@@ -10,8 +10,6 @@ import {
 import { TRAFFIC_TS_KEY, redisReadTSData } from "../Redis/redis_client";
 
 const getTrafficHistoryData = async (_, args, context) => {
-  console.log("In Traffic history resolver");
-
   if (!context.req.username) return;
 
   let resolution: number = 150;
@@ -58,7 +56,6 @@ const getTrafficHistoryData = async (_, args, context) => {
     resolution,
     "SUM"
   );
-  console.log(`end date is ${endDate} start date is ${startDate}`);
 
   const data = [{}];
   for (let i = 0; i < samples.length; i++) {

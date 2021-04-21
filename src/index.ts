@@ -9,7 +9,12 @@ import * as cors from "cors";
 import * as systemInformation from "systeminformation";
 import { RedisPubSub } from "graphql-redis-subscriptions";
 import { generalRedisClient, pubsub } from "./pubsub";
-import { startRuntimeSample, stopRuntimeSample } from "./sampler";
+import {
+  startRuntimeSample,
+  startSampling,
+  stopRuntimeSample,
+} from "./sampler";
+import { getAllAlerts } from "./Alerts/setupAlerts";
 // const pubsub = new PubSub();
 
 generalRedisClient.set("numOfSubs", 0);
@@ -82,4 +87,6 @@ httpServer.listen({ port: 4000 }, () => {
   console.log(`Subscriptions are at ws://localhost:4000${subPath}`);
 });
 
+startSampling();
+getAllAlerts();
 //systemInformation.dockerContainers().then((date) => console.log(date));
