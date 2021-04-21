@@ -60,8 +60,10 @@ const typeDefs = [
       alert(
         start: Float!
         end: Float!
+        type: String!
         rangeName: String!
         metric: String!
+        component: String!
         alertName: String!
         id: Float!
       ): Boolean

@@ -5,7 +5,12 @@ export interface Alert {
   start: number;
   end: number;
   metric: string;
+  component: string;
   rangeName: string;
   AlertName: string;
   contineuosTriggerCount: number;
+}
+export interface AlertChecker {
+  timerID: NodeJS.Timeout;
+  alertList: Alert[];
 }

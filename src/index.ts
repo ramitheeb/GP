@@ -14,7 +14,7 @@ import {
   startSampling,
   stopRuntimeSample,
 } from "./sampler";
-import { getAllAlerts } from "./Alerts/setupAlerts";
+import { getAllAlerts } from "./Alerts/alerts";
 // const pubsub = new PubSub();
 
 generalRedisClient.set("numOfSubs", 0);

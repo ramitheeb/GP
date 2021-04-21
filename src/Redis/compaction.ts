@@ -35,36 +35,26 @@ const compactForAll = async () => {
 
   // 1 min - 10 mins - 1hr
   const timeBuckets = [60000, 600000, 3600000];
-  const metric = metrics[4];
-  const component = components[4];
-  for (let j = 1; j < periods.length; j++) {
-    const srcPeriod = "runtime";
-    const dstPeriod = periods[j];
-    const srcKey = `${metric}:${component}:${srcPeriod}`;
-    const dstKey = `${metric}:${component}:${dstPeriod}`;
-
-    await createTimeSeriesRule(
-      client,
-      srcKey,
-      dstKey,
-      timeBuckets[j - 1],
-      AggregationType.SUM
-    );
+  for (let i = 0; i < metrics.length; i++) {
+    const metric = metrics[i];
+    const component = components[i];
+    for (let j = 1; j < periods.length; j++) {
+      const srcPeriod = "runtime";
+      const dstPeriod = periods[j];
+      const srcKey = `${metric}:${component}:${srcPeriod}`;
+      const dstKey = `${metric}:${component}:${dstPeriod}`;
+      const aggregationType: AggregationType =
+        metric === "traffic" ? AggregationType.SUM : AggregationType.AVG;
+      await createTimeSeriesRule(
+        client,
+        srcKey,
+        dstKey,
+        timeBuckets[j - 1],
+        aggregationType
+      );
+    }
   }
-  // for (let i = 0; i < metrics.length; i++) {
-  //   const metric = metrics[i];
-  //   const component = components[i];
-  //   for (let j = 1; j < periods.length; j++) {
-  //     const srcPeriod = "runtime";
-  //     const dstPeriod = periods[j];
-  //     const srcKey = `${metric}:${component}:${srcPeriod}`;
-  //     const dstKey = `${metric}:${component}:${dstPeriod}`;
-
-  //     await createTimeSeriesRule(client, srcKey, dstKey, timeBuckets[j - 1],AggregationType.AVG);
-  //   }
-  // }
   console.log("Finished creating rules");
-
 
   client.disconnect();
 };

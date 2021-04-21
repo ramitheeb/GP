@@ -28,6 +28,7 @@ import getDockerContainersData from "./DockerDataResolvers/getDockerContainersDa
 import GraphQLJSON, { GraphQLJSONObject } from "graphql-type-json";
 import getDockerImageData from "./DockerDataResolvers/getDockerImageData";
 import getContainerStatus from "./DockerDataResolvers/getContainerStatus";
+import { addAlert, updateAlert } from "../Alerts/alerts";
 const getToken = ({ username, password }) =>
   jwt.sign(
     {
@@ -112,19 +113,60 @@ const resolvers = {
         id: user.username,
       };
     },
-    alert(_, { start, end, rangeName, metric, alertName, id }, { res }) {
+    alert(
+      _,
+      { start, end, rangeName, metric, alertName, id, component, type },
+      { res }
+    ) {
       try {
         const db = new sqlite3.Database("./database.db");
         if (id === -1) {
-          var stmt = db.prepare("INSERT INTO Alerts VALUES (?,?,?,?,?,?,?)");
-          stmt.run(null, "s", start, end, metric, rangeName, alertName);
+          var stmt = db.prepare("INSERT INTO Alerts VALUES (?,?,?,?,?,?,?,?)");
+          stmt.run(
+            [null, type, start, end, metric, component, rangeName, alertName],
+            function () {
+              addAlert({
+                id: this.lastID ? this.lastID : -1,
+                start: start,
+                end: end,
+                AlertName: alertName,
+                component: component,
+                metric: metric,
+                rangeName: rangeName,
+                type: type,
+                contineuosTriggerCount: 0,
+              });
+            }
+          );
           stmt.finalize();
         } else if (id >= 0) {
-          var inputData = ["s", start, end, metric, rangeName, alertName, id];
+          var inputData = [
+            type,
+            start,
+            end,
+            metric,
+            component,
+            rangeName,
+            alertName,
+            id,
+          ];
           db.run(
-            "UPDATE Alerts SET type =?, start=?, end=?,  metric=?,  rangeName=?,  AlertName=?  WHERE id=?",
+            "UPDATE Alerts SET type =?, start=?, end=?,  metric=?, component=?, rangeName=?,  AlertName=?  WHERE id=?",
             inputData
           );
+          console.log("hello?");
+
+          updateAlert({
+            id: id,
+            type: type,
+            start: start,
+            end: end,
+            AlertName: alertName,
+            rangeName: rangeName,
+            metric: metric,
+            component: component,
+            contineuosTriggerCount: 0,
+          });
         }
         db.close();
       } catch (e) {

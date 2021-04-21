@@ -11,7 +11,7 @@ const sendData = async (client: RedisTimeSeries, key: string) => {
       const sample = new Sample(
         key,
         Math.floor(Math.random() * 48000 + 2000),
-        1583826179000 + 86400000 * i + Math.floor(Math.random() * 86400000)
+        1586525166000 + 86400000 * i + Math.floor(Math.random() * 86400000)
       );
       samples.push(sample);
     }
@@ -48,7 +48,7 @@ const sendDataToDiskTS = async (
       const readValue = Math.floor(Math.random() * 2840);
       const writeValue = Math.floor(Math.random() * 2840);
       const timestamp =
-        1583772196000 + 86400000 * i + Math.floor(Math.random() * 86400000);
+        1586525166000 + 86400000 * i + Math.floor(Math.random() * 86400000);
 
       const readSample = new Sample(readKey, readValue, timestamp);
       const writeSample = new Sample(writeKey, writeValue, timestamp);
@@ -71,7 +71,7 @@ const sendDataToTraffiTS = async (client: RedisTimeSeries, key: string) => {
       const sample = new Sample(
         key,
         Math.floor(Math.random() * 6),
-        1582830063000 + 86400000 * i + Math.floor(Math.random() * 86400000)
+        1586525166000 + 86400000 * i + Math.floor(Math.random() * 86400000)
       );
       samples.push(sample);
     }
@@ -97,15 +97,13 @@ const sendDataToTraffiTS = async (client: RedisTimeSeries, key: string) => {
 const sendForAll = async () => {
   const factory = new RedisTimeSeriesFactory();
   const client = factory.create();
-  const metrics = ["cpu-usage", "mem-usage", "disk-usage", "disk-usage"];
-  const components = ["current-load", "free", "read", "write"];
-  // sendData(client, "cpu-usage:current-load:runtime");
-  // sendData(client, "mem-usage:used:runtime");
-  // sendDataToDiskTS(
-  //   client,
-  //   "disk-usage:read:runtime",
-  //   "disk-usage:write:runtime"
-  // );
+  sendData(client, "cpu-usage:current-load:runtime");
+  sendData(client, "mem-usage:used:runtime");
+  sendDataToDiskTS(
+    client,
+    "disk-usage:read:runtime",
+    "disk-usage:write:runtime"
+  );
   sendDataToTraffiTS(client, "traffic:all:runtime");
 };
 sendForAll();
