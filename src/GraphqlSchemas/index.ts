@@ -4,6 +4,7 @@ import SystemInformationTypes from "./SystemInformationTypes";
 import { DemographicGeoStatisticsHistoryData } from "./DemographicHistoryData";
 import { EndpointStatisticsHistoryData } from "./EndpointStatisticsHistory";
 import TrafficHistoryData from "./TrafficHistoryData";
+import { CommandChainOutput } from "./ExtraTypes";
 
 const typeDefs = [
   gql`
@@ -21,6 +22,7 @@ const typeDefs = [
       DiskData: DisksIoData
       ProcessesData: ProcessesData
       Alerts: [Alert]
+      CommandChains: [CommandChain]
       UsersData: [UserData]
       DockerInfo: DockerInfoData
       DockerContainersData: [DockerContainerData]
@@ -67,6 +69,17 @@ const typeDefs = [
         alertName: String!
         id: Float!
       ): Boolean
+      saveCommandChain(
+        id: Float!
+        chainName: String!
+        workingDirectory: String
+        scriptFileLocation: String
+        chain: [String]
+        args: [String]
+        argsChanged: Boolean
+      ): Boolean
+      fireCommandChain(id: Float!): CommandChainOutput
+      deleteCommandChains(id: Float!): Boolean
     }
 
     type Subscription {
@@ -85,6 +98,7 @@ const typeDefs = [
   TrafficHistoryData,
   EndpointStatisticsHistoryData,
   DemographicGeoStatisticsHistoryData,
+  CommandChainOutput,
 ];
 
 export default typeDefs;

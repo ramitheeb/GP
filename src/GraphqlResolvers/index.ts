@@ -9,6 +9,7 @@ import getMemData from "./MemoryDataResolvers/getMemData";
 import getCurrentLoadData from "./LoadDataResolvers/getCurrentLoadData";
 import getOsInfo from "./SystemDataResolvers/getOsInfo";
 import * as jwt from "jsonwebtoken";
+import { promises as ps } from "fs";
 import { AuthenticationError, withFilter } from "apollo-server";
 import config from "../config";
 import getDiskData from "./DiskDataResolvers/getDiskData";
@@ -22,6 +23,7 @@ import getTrafficHistoryData from "./getTrafficHistoryData";
 import getEndpointStatisticsHistory from "./getEndpointStatisticsHistory";
 import getDemographicStatisticsHistory from "./getDemographicGeoStatisticsData";
 import * as sqlite3 from "sqlite3";
+import { open } from "sqlite";
 import getAlerts from "./getAlerts";
 import getDockerInfo from "./DockerDataResolvers/getDockerInfo";
 import getDockerContainersData from "./DockerDataResolvers/getDockerContainersData";
@@ -29,6 +31,9 @@ import GraphQLJSON, { GraphQLJSONObject } from "graphql-type-json";
 import getDockerImageData from "./DockerDataResolvers/getDockerImageData";
 import getContainerStatus from "./DockerDataResolvers/getContainerStatus";
 import { addAlert, updateAlert } from "../Alerts/alerts";
+import { fireCMDChain } from "../Commands/commandChains";
+import { getCommandChains } from "./getCommandChains";
+
 const getToken = ({ username, password }) =>
   jwt.sign(
     {
@@ -89,6 +94,7 @@ const resolvers = {
     DemographicGeoStatisticsHistory: getDemographicStatisticsHistory,
     UsersData: getUsersData,
     Alerts: getAlerts,
+    CommandChains: getCommandChains,
     DockerInfo: getDockerInfo,
     DockerContainersData: getDockerContainersData,
     DockerImageData: getDockerImageData,
@@ -154,7 +160,6 @@ const resolvers = {
             "UPDATE Alerts SET type =?, start=?, end=?,  metric=?, component=?, rangeName=?,  AlertName=?  WHERE id=?",
             inputData
           );
-          console.log("hello?");
 
           updateAlert({
             id: id,
@@ -170,6 +175,226 @@ const resolvers = {
         }
         db.close();
       } catch (e) {
+        return false;
+      }
+      return true;
+    },
+    async saveCommandChain(
+      _,
+      {
+        id,
+        chainName,
+        scriptFileLocation,
+        chain,
+        workingDirectory,
+        args,
+        argsChanged,
+      },
+      { res }
+    ) {
+      console.log("Inside save command chain");
+      console.log(
+        `id  :${id}, chain name : ${chainName}, script file location : ${scriptFileLocation}, chain : ${chain}, working directory : ${workingDirectory}, arguments : ${args}`
+      );
+      const db = await open({
+        filename: "./database.db",
+        driver: sqlite3.Database,
+      });
+
+      const deleteNewRow = async (id: number) => {
+        const deleteResult = await db
+          .run("DELETE FROM CommandChains where id = ?", [id])
+          .catch((err) => {
+            console.log(`An error occured trying to delete new row: ${err}`);
+          });
+        if (!deleteResult) return;
+        db.close();
+      };
+
+      try {
+        if (!workingDirectory) workingDirectory = "scripts";
+        if (id === -1) {
+          console.log("Inserting into database");
+          if (!args) args = [];
+
+          let fileUploaded = true;
+
+          // will be changed below to accomadate multiple chains with the same name
+          if (!scriptFileLocation) {
+            fileUploaded = false;
+            scriptFileLocation = `scripts/${chainName}.sh`;
+          }
+          console.log(
+            `id  :${id}, chain name : ${chainName}, script file location : ${scriptFileLocation}, chain : ${chain}, working directory : ${workingDirectory}, arguments : ${args}`
+          );
+          const insertChainResult = await db
+            .run("INSERT INTO CommandChains VALUES (?,?,?,?)", [
+              null,
+              chainName,
+              scriptFileLocation,
+              workingDirectory,
+            ])
+            .catch((err) => {
+              console.log(`An error occured trying to insert : ${err}`);
+              db.close();
+            });
+          if (!insertChainResult) return false;
+
+          for (let i = 0; i < args.length; i++) {
+            const element = args[i];
+            const insertArgResult = await db
+              .run("INSERT INTO ChainArguments Values (?,?,?,?)", [
+                null,
+                insertChainResult.lastID,
+                element,
+                i,
+              ])
+              .catch((err) => {
+                console.log(`An error occured : ${err}`);
+                return;
+              });
+            if (!insertArgResult) {
+              deleteNewRow(
+                insertChainResult.lastID ? insertChainResult.lastID : -1
+              );
+              return false;
+            }
+          }
+
+          if (!fileUploaded) {
+            let actualLocation: string = `scripts/${insertChainResult.lastID}_${chainName}.sh`;
+            console.log(`Changing file location into ${actualLocation}`);
+            try {
+              await ps.writeFile(actualLocation, `#!/bin/sh\n${chain}`);
+              await ps.chmod(actualLocation, 0o700);
+              const updateChainResult = await db
+                .run(
+                  "UPDATE CommandChains set scriptFileLocation = ? where id = ?",
+                  [actualLocation, insertChainResult.lastID]
+                )
+                .catch((err) => {
+                  console.log(
+                    `An error occured trying to update location : ${err}`
+                  );
+                });
+              if (!updateChainResult) {
+                deleteNewRow(
+                  insertChainResult.lastID ? insertChainResult.lastID : -1
+                );
+                return false;
+              }
+            } catch (err) {
+              console.log(
+                `An error occured trying to write ${actualLocation} : ${err}`
+              );
+            }
+          } else {
+            db.close();
+            return true;
+          }
+        } else if (id >= 0) {
+          console.log("Updating chain");
+
+          if (chain) {
+            console.log("new chain inserted");
+            try {
+              await ps.writeFile(
+                scriptFileLocation,
+                `
+              #!/bin/sh\n${chain}            
+              `
+              );
+            } catch (e) {
+              console.log(
+                `An error occured trying to write ${scriptFileLocation} : ${e}`
+              );
+              db.close();
+              return false;
+            }
+          }
+
+          if (argsChanged) {
+            const deleteResult = db
+              .run("delete from ChainArguments where chainID = ?", [id])
+              .catch((err) => {
+                console.log(
+                  `An error occured while trying to delete old args : ${err}`
+                );
+              });
+            if (!deleteResult) {
+              db.close();
+              return false;
+            }
+            if (args) {
+              for (let i = 0; i < args.length; i++) {
+                const element = args[i];
+                const insertArgResult = await db
+                  .run("INSERT INTO ChainArguments Values (?,?,?,?)", [
+                    null,
+                    id,
+                    element,
+                    i,
+                  ])
+                  .catch((err) => {
+                    console.log(`An error occured : ${err}`);
+                    return;
+                  });
+                if (!insertArgResult) {
+                  db.close();
+                  return false;
+                }
+              }
+            }
+          }
+          var inputData = [chainName, scriptFileLocation, workingDirectory, id];
+          const updateResult = await db
+            .run(
+              "UPDATE CommandChains SET chainName =?, scriptFileLocation=?, workingDirectory = ?  WHERE id=?",
+              inputData
+            )
+            .catch((err) => {
+              console.log(
+                `An error occured trying to update ${chainName} : ${err}`
+              );
+            });
+          if (!updateResult) {
+            db.close();
+            return false;
+          }
+        }
+      } catch (e) {
+        console.log(`An error occured : ${e}`);
+        db.close();
+        return false;
+      }
+      return true;
+    },
+    async fireCommandChain(_, { id }, { res }) {
+      return await fireCMDChain(id);
+    },
+    async deleteCommandChains(_, { id }, { res }) {
+      const db = await open({
+        filename: "./database.db",
+        driver: sqlite3.Database,
+      });
+      const deleteArgsResult = await db
+        .run("DELETE FROM ChainArguments WHERE chainID = ?", id)
+        .catch((err) => {
+          console.log(
+            `An error occured while trying to delete arguments : ${err}`
+          );
+        });
+      if (!deleteArgsResult) {
+        return false;
+      }
+      const deleteResult = await db
+        .run("DELETE FROM CommandChains WHERE id = ? ", id)
+        .catch((err) => {
+          console.log(
+            `An error occured while trying to delete a command chains : ${err}`
+          );
+        });
+      if (!deleteResult) {
         return false;
       }
       return true;

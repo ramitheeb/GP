@@ -12,6 +12,15 @@ const allTypes = gql`
     alertName: String!
     id: Float!
   }
+
+  type CommandChain {
+    id: Float!
+    chainName: String!
+    scriptFileLocation: String!
+    workingDirectory: String!
+    arguments: [String]
+    chain: [String]
+  }
   type User {
     id: ID!
     username: String!
