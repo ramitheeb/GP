@@ -181,21 +181,13 @@ const resolvers = {
     },
     async saveCommandChain(
       _,
-      {
-        id,
-        chainName,
-        scriptFileLocation,
-        chain,
-        workingDirectory,
-        args,
-        argsChanged,
-      },
+      { id, chainName, chain, args, argsChanged, scriptFileLocation },
       { res }
     ) {
-      console.log("Inside save command chain");
-      console.log(
-        `id  :${id}, chain name : ${chainName}, script file location : ${scriptFileLocation}, chain : ${chain}, working directory : ${workingDirectory}, arguments : ${args}`
-      );
+      // console.log("Inside save command chain");
+      // console.log(
+      //   `id  :${id}, chain name : ${chainName}, script file location : ${scriptFileLocation}, chain : ${chain}, working directory : ${workingDirectory}, arguments : ${args}`
+      // );
       const db = await open({
         filename: "./database.db",
         driver: sqlite3.Database,
@@ -212,27 +204,21 @@ const resolvers = {
       };
 
       try {
-        if (!workingDirectory) workingDirectory = "scripts";
         if (id === -1) {
           console.log("Inserting into database");
           if (!args) args = [];
 
-          let fileUploaded = true;
-
           // will be changed below to accomadate multiple chains with the same name
-          if (!scriptFileLocation) {
-            fileUploaded = false;
+          if (!scriptFileLocation)
             scriptFileLocation = `scripts/${chainName}.sh`;
-          }
-          console.log(
-            `id  :${id}, chain name : ${chainName}, script file location : ${scriptFileLocation}, chain : ${chain}, working directory : ${workingDirectory}, arguments : ${args}`
-          );
+          // console.log(
+          //   `id  :${id}, chain name : ${chainName}, script file location : ${scriptFileLocation}, chain : ${chain}, working directory : ${workingDirectory}, arguments : ${args}`
+          // );
           const insertChainResult = await db
-            .run("INSERT INTO CommandChains VALUES (?,?,?,?)", [
+            .run("INSERT INTO CommandChains VALUES (?,?,?)", [
               null,
               chainName,
               scriptFileLocation,
-              workingDirectory,
             ])
             .catch((err) => {
               console.log(`An error occured trying to insert : ${err}`);
@@ -261,36 +247,31 @@ const resolvers = {
             }
           }
 
-          if (!fileUploaded) {
-            let actualLocation: string = `scripts/${insertChainResult.lastID}_${chainName}.sh`;
-            console.log(`Changing file location into ${actualLocation}`);
-            try {
-              await ps.writeFile(actualLocation, `#!/bin/sh\n${chain}`);
-              await ps.chmod(actualLocation, 0o700);
-              const updateChainResult = await db
-                .run(
-                  "UPDATE CommandChains set scriptFileLocation = ? where id = ?",
-                  [actualLocation, insertChainResult.lastID]
-                )
-                .catch((err) => {
-                  console.log(
-                    `An error occured trying to update location : ${err}`
-                  );
-                });
-              if (!updateChainResult) {
-                deleteNewRow(
-                  insertChainResult.lastID ? insertChainResult.lastID : -1
+          let actualLocation: string = `scripts/${insertChainResult.lastID}.sh`;
+          // console.log(`Changing file location into ${actualLocation}`);
+          try {
+            await ps.writeFile(actualLocation, `#!/bin/sh\n${chain}`);
+            await ps.chmod(actualLocation, 0o700);
+            const updateChainResult = await db
+              .run(
+                "UPDATE CommandChains set scriptFileLocation = ? where id = ?",
+                [actualLocation, insertChainResult.lastID]
+              )
+              .catch((err) => {
+                console.log(
+                  `An error occured trying to update location : ${err}`
                 );
-                return false;
-              }
-            } catch (err) {
-              console.log(
-                `An error occured trying to write ${actualLocation} : ${err}`
+              });
+            if (!updateChainResult) {
+              deleteNewRow(
+                insertChainResult.lastID ? insertChainResult.lastID : -1
               );
+              return false;
             }
-          } else {
-            db.close();
-            return true;
+          } catch (err) {
+            console.log(
+              `An error occured trying to write ${actualLocation} : ${err}`
+            );
           }
         } else if (id >= 0) {
           console.log("Updating chain");
@@ -298,12 +279,7 @@ const resolvers = {
           if (chain) {
             console.log("new chain inserted");
             try {
-              await ps.writeFile(
-                scriptFileLocation,
-                `
-              #!/bin/sh\n${chain}            
-              `
-              );
+              await ps.writeFile(scriptFileLocation, `#!/bin/sh\n${chain}`);
             } catch (e) {
               console.log(
                 `An error occured trying to write ${scriptFileLocation} : ${e}`
@@ -346,12 +322,9 @@ const resolvers = {
               }
             }
           }
-          var inputData = [chainName, scriptFileLocation, workingDirectory, id];
+          var inputData = [chainName, id];
           const updateResult = await db
-            .run(
-              "UPDATE CommandChains SET chainName =?, scriptFileLocation=?, workingDirectory = ?  WHERE id=?",
-              inputData
-            )
+            .run("UPDATE CommandChains SET chainName =? WHERE id=?", inputData)
             .catch((err) => {
               console.log(
                 `An error occured trying to update ${chainName} : ${err}`
@@ -369,13 +342,30 @@ const resolvers = {
       }
       return true;
     },
-    async fireCommandChain(_, { id }, { res }) {
-      return await fireCMDChain(id);
+    async fireCommandChain(_, { id, args }, { res }) {
+      return await fireCMDChain(id, args);
     },
     async deleteCommandChains(_, { id }, { res }) {
       const db = await open({
         filename: "./database.db",
         driver: sqlite3.Database,
+      });
+      const chainRow = await db
+        .get("select * from CommandChains where id = ?", [id])
+        .catch((err) => {
+          console.log(
+            `An error occured while trying to fetch the command chain row : ${err}`
+          );
+        });
+
+      if (!chainRow) {
+        return false;
+      }
+
+      await ps.unlink(chainRow.scriptFileLocation).catch((err) => {
+        console.log(
+          `An error occured while trying to delete the script file : ${err}`
+        );
       });
       const deleteArgsResult = await db
         .run("DELETE FROM ChainArguments WHERE chainID = ?", id)
@@ -387,6 +377,7 @@ const resolvers = {
       if (!deleteArgsResult) {
         return false;
       }
+
       const deleteResult = await db
         .run("DELETE FROM CommandChains WHERE id = ? ", id)
         .catch((err) => {

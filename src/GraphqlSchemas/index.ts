@@ -72,13 +72,12 @@ const typeDefs = [
       saveCommandChain(
         id: Float!
         chainName: String!
-        workingDirectory: String
         scriptFileLocation: String
-        chain: [String]
+        chain: String
         args: [String]
         argsChanged: Boolean
       ): Boolean
-      fireCommandChain(id: Float!): CommandChainOutput
+      fireCommandChain(id: Float!, args: [String]!): CommandChainOutput
       deleteCommandChains(id: Float!): Boolean
     }
 

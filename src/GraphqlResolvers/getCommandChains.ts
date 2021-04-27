@@ -44,7 +44,6 @@ export const getCommandChains = async (_, __, context) => {
       arguments: args,
       chainName: element.chainName,
       scriptFileLocation: element.scriptFileLocation,
-      workingDirectory: element.workingDirectory,
       chain: chains,
     });
   }
