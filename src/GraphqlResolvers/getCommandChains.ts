@@ -36,9 +36,8 @@ export const getCommandChains = async (_, __, context) => {
       else return 1;
     });
     args = argRows.map((item) => item.argument);
-    const chainsString = readFileSync(element.scriptFileLocation);
-    const chains = chainsString.toString().split("\n");
-    chains.shift();
+    const chains = readFileSync(element.scriptFileLocation).toString();
+    chains;
     CMDChains.push({
       id: element.id,
       arguments: args,

@@ -3,5 +3,5 @@ export interface CommandChain {
   scriptFileLocation: string;
   chainName: string;
   arguments: string[];
-  chain?: string[];
+  chain?: string;
 }
