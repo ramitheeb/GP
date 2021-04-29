@@ -10,7 +10,7 @@ import getCurrentLoadData from "./LoadDataResolvers/getCurrentLoadData";
 import getOsInfo from "./SystemDataResolvers/getOsInfo";
 import * as jwt from "jsonwebtoken";
 import { promises as ps } from "fs";
-import { AuthenticationError, withFilter } from "apollo-server";
+import { AuthenticationError, IResolvers, withFilter } from "apollo-server";
 import config from "../config";
 import getDiskData from "./DiskDataResolvers/getDiskData";
 import getDiskHistoryData from "./DiskDataResolvers/getDiskHistoryData";
@@ -33,7 +33,8 @@ import getContainerStatus from "./DockerDataResolvers/getContainerStatus";
 import { addAlert, updateAlert } from "../Alerts/alerts";
 import { fireCMDChain } from "../Commands/commandChains";
 import { getCommandChains } from "./getCommandChains";
-
+import { FileUpload, GraphQLUpload } from "graphql-upload";
+import { processRequest } from "graphql-upload";
 const getToken = ({ username, password }) =>
   jwt.sign(
     {
@@ -44,10 +45,9 @@ const getToken = ({ username, password }) =>
     { expiresIn: "20d" }
   );
 
-const resolvers = {
-  JSON: GraphQLJSON,
+const resolvers: IResolvers = {
+  GraphQLUpload: GraphQLUpload,
   JSONObject: GraphQLJSONObject,
-
   Subscription: {
     MemData: {
       subscribe: () => pubsub.asyncIterator("NEW_MEM"),
@@ -181,7 +181,7 @@ const resolvers = {
     },
     async saveCommandChain(
       _,
-      { id, chainName, chain, args, argsChanged, scriptFileLocation },
+      { id, chainName, chain, args, argsChanged, scriptFileLocation, file },
       { res }
     ) {
       // console.log("Inside save command chain");
@@ -246,11 +246,49 @@ const resolvers = {
               return false;
             }
           }
+          let actualLocation: string = "";
+          let dataToBeWritten: string = "";
+          if (file) {
+            if (file) {
+              const {
+                filename,
+                mimetype,
+                createReadStream,
+              } = (await file) as FileUpload;
 
-          let actualLocation: string = `scripts/${insertChainResult.lastID}.sh`;
-          // console.log(`Changing file location into ${actualLocation}`);
+              actualLocation = `scripts/${filename}.sh`;
+              const inStream = createReadStream();
+              const readFile = await new Promise<string>((resolve, reject) => {
+                let data = "";
+                inStream.on("data", (chunck) => {
+                  data += chunck;
+                });
+                inStream.on("end", () => {
+                  resolve(data);
+                });
+                inStream.on("error", (err) => {
+                  reject(err);
+                });
+              }).catch((err) => {
+                console.log(
+                  `An error occured while trying to read the uploaded file`
+                );
+              });
+              if (!readFile) {
+                deleteNewRow(
+                  insertChainResult.lastID ? insertChainResult.lastID : -1
+                );
+                return false;
+              }
+              dataToBeWritten = readFile;
+            }
+          } else {
+            actualLocation = `scripts/${insertChainResult.lastID}.sh`;
+            dataToBeWritten = chain;
+            // console.log(`Changing file location into ${actualLocation}`);
+          }
           try {
-            await ps.writeFile(actualLocation, `#!/bin/sh\n${chain}`);
+            await ps.writeFile(actualLocation, `#!/bin/sh\n${dataToBeWritten}`);
             await ps.chmod(actualLocation, 0o700);
             const updateChainResult = await db
               .run(
@@ -275,7 +313,6 @@ const resolvers = {
           }
         } else if (id >= 0) {
           console.log("Updating chain");
-
           if (chain) {
             console.log("new chain inserted");
             try {
@@ -343,7 +380,7 @@ const resolvers = {
       return true;
     },
     async fireCommandChain(_, { id, args }, { res }) {
-      return await fireCMDChain(id, args);
+      return await fireCMDChain(id, args ? args : []);
     },
     async deleteCommandChains(_, { id }, { res }) {
       const db = await open({

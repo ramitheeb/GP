@@ -20,6 +20,7 @@ import { getAllAlerts } from "./Alerts/alerts";
 generalRedisClient.set("numOfSubs", 0);
 
 const server = new ApolloServer({
+  uploads: false,
   subscriptions: {
     path: "/subscriptions",
     onConnect: (connectionParams, webSocket, context) => {
@@ -52,8 +53,8 @@ const server = new ApolloServer({
         });
     },
   },
-  typeDefs,
   resolvers,
+  typeDefs,
   context: ({ req, res }: any) => ({ req, res, RedisPubSub }),
 });
 

@@ -13,6 +13,7 @@ export const fireCMDChain = async (id: number, args: string[]) => {
     filename: "./database.db",
     driver: sqlite3.Database,
   });
+
   const row = await db
     .get("SELECT * FROM CommandChains where id = ?", [id])
     .catch((err) => {
@@ -21,6 +22,8 @@ export const fireCMDChain = async (id: number, args: string[]) => {
       );
     });
   if (!row) {
+    console.log("Row not found in database");
+
     db.close();
     return {
       firedSuccessfully: false,
@@ -50,11 +53,14 @@ export const fireCMDChain = async (id: number, args: string[]) => {
     });
   });
   if (!firedCMD) {
+    console.log("An error occured and the command wasn't fired");
+
     return {
       firedSuccessfully: false,
       output: null,
     };
   }
+
   if (firedCMD.stdout !== "") {
     ps.appendFile(
       outputLog,
@@ -79,6 +85,7 @@ export const fireCMDChain = async (id: number, args: string[]) => {
       output: null,
     };
   }
+
   return {
     firedSuccessfully: true,
     output: firedCMD.stdout,

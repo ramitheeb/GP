@@ -8,6 +8,7 @@ import { CommandChainOutput } from "./ExtraTypes";
 
 const typeDefs = [
   gql`
+    scalar GraphQLUpload
     type Query {
       Time: TimeData
       cpu: CpuData
@@ -75,9 +76,10 @@ const typeDefs = [
         scriptFileLocation: String
         chain: String
         args: [String]
+        file: GraphQLUpload
         argsChanged: Boolean
       ): Boolean
-      fireCommandChain(id: Float!, args: [String]!): CommandChainOutput
+      fireCommandChain(id: Float!, args: [String]): CommandChainOutput
       deleteCommandChains(id: Float!): Boolean
     }
 

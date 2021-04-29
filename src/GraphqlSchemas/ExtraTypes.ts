@@ -6,3 +6,10 @@ export const CommandChainOutput = gql`
     output: String
   }
 `;
+export const FileType = gql`
+  type File {
+    filename: String!
+    mimetype: String!
+    encoding: String!
+  }
+`;
