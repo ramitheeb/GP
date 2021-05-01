@@ -1,23 +1,23 @@
 import { Reader, ReaderModel } from "@maxmind/geoip2-node";
-import { generalRedisClient } from "../pubsub";
-
-const findDemograhpic = async () => {
+import * as Redis from "ioredis";
+export const findDemographic = async () => {
+  const redisCilent = new Redis();
   let reader: ReaderModel;
-  let addresses: string[] = [];
+  let addresses: string[] | void = [];
   try {
     reader = await Reader.open(
-      "GeoLite2-Country_20210309/GeoLite2-Country.mmdb"
+      "./src/Nginx/GeoLite2-Country_20210309/GeoLite2-Country.mmdb"
     );
   } catch (e) {
     console.log(`An error occured while opening the GeoIP DB : ${e}`);
     return;
   }
-  try {
-    addresses = await generalRedisClient.lrange("addresses", 0, -1);
-  } catch (e) {
-    console.log(
-      `An error occured while reading address values from Redis : ${e}`
-    );
+
+  addresses = await redisCilent.lrange("addresses", 0, -1).catch((err) => {
+    console.log(`An error occured trying to find stored addresses : ${err}`);
+  });
+
+  if (!addresses) {
     return;
   }
   for (let i = 0; i < addresses.length; i++) {
@@ -35,14 +35,13 @@ const findDemograhpic = async () => {
     }
 
     if (code) {
-      generalRedisClient.hincrby("demographic", code, 1).catch((e) => {
+      redisCilent.hincrby("demographic", code, 1).catch((e) => {
         console.log(
           `An error occured while writing demographic values to Redis : ${e.toString()} `
         );
       });
     }
   }
-  console.log("Finished analyzing addresses");
-  generalRedisClient.del("addresses");
+
+  await redisCilent.del("addresses");
 };
-findDemograhpic();

@@ -4,11 +4,26 @@ import {
   Sample,
   TimestampRange,
 } from "redis-time-series-ts";
+import { generalRedisClient } from "../pubsub";
 
 export const MEMORY_TS_KEY = "mem-usage";
 export const DISK_TS_KEY = "disk-usage";
 export const CPU_LOAD_TS_KEY = "cpu-usage";
 export const TRAFFIC_TS_KEY = "traffic";
+export const MEASURED_METRICS: string[] = [
+  "cpu-usage",
+  "mem-usage",
+  "disk-usage",
+  "disk-usage",
+  "traffic",
+];
+export const MEASURED_COMPONENTS: string[] = [
+  "current-load",
+  "used",
+  "read",
+  "write",
+  "all",
+];
 const redisFactory = new RedisTimeSeriesFactory();
 export const redisTSClient = redisFactory.create();
 

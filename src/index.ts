@@ -15,10 +15,13 @@ import {
   stopRuntimeSample,
 } from "./sampler";
 import { getAllAlerts } from "./Alerts/alerts";
+import { setUpScheduledTasks } from "./Scheduler/scheduler";
 // const pubsub = new PubSub();
 
 generalRedisClient.set("numOfSubs", 0);
-
+setUpScheduledTasks().catch((err) => {
+  console.log(`Get rekt lol : ${err}`);
+});
 const server = new ApolloServer({
   uploads: false,
   subscriptions: {

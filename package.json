@@ -45,7 +45,8 @@
     "ts-node": "^9.1.1",
     "colors": "^1.4.0",
     "sqlite": "^4.0.21",
-    "graphql-upload": "^11.0.0"
+    "graphql-upload": "^11.0.0",
+    "cron": "^1.8.2"
   },
   "eslintConfig": {
     "extends": [
@@ -77,6 +78,7 @@
     "@types/jsonwebtoken": "^8.3.2",
     "@types/node": "^11.13.8",
     "@types/redis": "^2.8.28",
+    "@types/cron": "^1.7.2",
     "faker": "^5.5.2",
     "ts-node": "8.1.0",
     "ts-node-dev": "^1.0.0-pre.32",
