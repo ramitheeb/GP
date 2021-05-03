@@ -1,2 +1,2 @@
 #!/bin/sh
-echo three arguments
+sudo echo three arguments
