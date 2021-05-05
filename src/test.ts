@@ -1,4 +1,4 @@
-import { exec as execCB } from "child_process";
+import { exec as execCB, spawn } from "child_process";
 import * as utils from "util";
 const exec = utils.promisify(execCB);
 

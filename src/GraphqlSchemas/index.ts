@@ -5,6 +5,10 @@ import { DemographicGeoStatisticsHistoryData } from "./DemographicHistoryData";
 import { EndpointStatisticsHistoryData } from "./EndpointStatisticsHistory";
 import TrafficHistoryData from "./TrafficHistoryData";
 import { CommandChainOutput } from "./ExtraTypes";
+import {
+  AuthenticationInfoRequest,
+  AuthenticationRequestResponse,
+} from "./GenericAuthSSHTypes";
 
 const typeDefs = [
   gql`
@@ -59,6 +63,17 @@ const typeDefs = [
     }
 
     type Mutation {
+      authenticationRequest(
+        username: String!
+        serviceName: String!
+        submethods: String
+      ): AuthenticationRequestResponse
+
+      authenticationInfoResponse(
+        numOfResponses: Int!
+        responses: [String]!
+      ): AuthenticationRequestResponse
+
       login(username: String!, password: String!): User
       alert(
         start: Float!
@@ -100,6 +115,8 @@ const typeDefs = [
   EndpointStatisticsHistoryData,
   DemographicGeoStatisticsHistoryData,
   CommandChainOutput,
+  AuthenticationInfoRequest,
+  AuthenticationRequestResponse,
 ];
 
 export default typeDefs;

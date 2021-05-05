@@ -1,6 +1,5 @@
 import * as express from "express";
 import * as http from "http";
-
 import { ApolloServer, gql } from "apollo-server-express";
 import typeDefs from "./GraphqlSchemas";
 import resolvers from "./GraphqlResolvers";
@@ -27,12 +26,20 @@ import {
   SystemRuntime,
   Traffic,
 } from "./Models/models";
+import { initAuthHandlers } from "./Authentication/handlers";
+import * as session from "express-session";
+import * as Redis from "ioredis";
+import { randomBytes } from "crypto";
+import { convertTimeUnitToMS } from "./Utils/round_up_time";
 // const pubsub = new PubSub();
 
+let RedisStore = require("connect-redis")(session);
+let redisSessionClient = new Redis();
+
 generalRedisClient.set("numOfSubs", 0);
-setUpScheduledTasks().catch((err) => {
-  console.log(`Get rekt lol : ${err}`);
-});
+setUpScheduledTasks();
+initAuthHandlers();
+
 const server = new ApolloServer({
   uploads: false,
   subscriptions: {
@@ -94,8 +101,24 @@ var corsOptions = {
   credentials: true,
 };
 
-app.use(cors(corsOptions));
+app.use(
+  session({
+    name: "authID",
+    secret: randomBytes(8).toString("hex"),
+    store: new RedisStore({ client: redisSessionClient }),
+    cookie: {
+      maxAge: convertTimeUnitToMS("m") * 2,
+    },
+    unset: "destroy",
+    saveUninitialized: false,
+    resave: false,
+  })
+);
+app.use(cors());
 app.use(cookieParser());
+app.use((req, res, next) => {
+  next();
+});
 
 app.use((req, _, next) => {
   const accessToken = req.cookies["access-token"];
@@ -107,7 +130,7 @@ app.use((req, _, next) => {
   next();
 });
 
-server.applyMiddleware({ app, cors: corsOptions });
+server.applyMiddleware({ app, cors: true });
 const httpServer = http.createServer(app);
 server.installSubscriptionHandlers(httpServer);
 

@@ -1,10 +1,14 @@
 import * as jwt from "jsonwebtoken";
 import { AuthenticationError, IResolvers, withFilter } from "apollo-server";
 import config from "../config";
-
+import { open } from "sqlite";
+import * as sqlite3 from "sqlite3";
 import { GraphQLJSONObject } from "graphql-type-json";
 
 import { GraphQLUpload } from "graphql-upload";
+import { generalRedisClient } from "../pubsub";
+import { handleAuth } from "../Authentication/handlers";
+import { AuthInfoRequest } from "../Authentication/modules";
 const getToken = ({ username, password }) =>
   jwt.sign(
     {
@@ -59,10 +63,6 @@ const resolvers: IResolvers = {
     },
   },
   Query: {
-    Time: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.System?.getTime();
-    },
     cpu: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.CPU?.getCPUData();
@@ -79,14 +79,6 @@ const resolvers: IResolvers = {
       if (!context.req.username) return;
       return context.models.CPU?.getCPUCacheData();
     },
-    system: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.System?.getSystemData();
-    },
-    bios: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.System?.getBiosData();
-    },
     CpuCurrentSpeedData: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.CPU?.getCPUCurrentSpeed();
@@ -94,6 +86,10 @@ const resolvers: IResolvers = {
     CpuTemperatureData: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.CPU?.getCPUTemperature();
+    },
+    CurrentLoad: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.CPU?.getCurrentLoadData();
     },
     MemData: (_, __, context) => {
       if (!context.req.username) return;
@@ -107,14 +103,6 @@ const resolvers: IResolvers = {
         args.fromDate
       );
     },
-    CurrentLoad: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.CPU?.getCurrentLoadData();
-    },
-    OsInfo: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.System?.getOSInfo();
-    },
     DiskData: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.Disk?.getDiskData();
@@ -127,9 +115,29 @@ const resolvers: IResolvers = {
         args.fromDate
       );
     },
+    Time: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.System?.getTime();
+    },
+    system: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.System?.getSystemData();
+    },
+    bios: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.System?.getBiosData();
+    },
+    OsInfo: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.System?.getOSInfo();
+    },
     ProcessesData: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.SystemRuntime?.getProcessesData();
+    },
+    UsersData: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.SystemRuntime?.getUsersData();
     },
     TrafficHistory: (_, args, context) => {
       if (!context.req.username) return;
@@ -146,10 +154,6 @@ const resolvers: IResolvers = {
     DemographicGeoStatisticsHistory: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.Traffic?.getDemographicHistory();
-    },
-    UsersData: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.SystemRuntime?.getUsersData();
     },
     Alerts: (_, __, context) => {
       if (!context.req.username) return;
@@ -177,6 +181,85 @@ const resolvers: IResolvers = {
     },
   },
   Mutation: {
+    async authenticationRequest(
+      _,
+      { username, serviceName, submethods },
+      { res, req }
+    ) {
+      const db = await open({
+        filename: "./database.db",
+        driver: sqlite3.Database,
+      });
+
+      const userRow = await db
+        .get("SELECT * FROM Users WHERE username = ?", [username])
+        .catch((err) => {
+          console.log(
+            `An error occured while trying to fetch user from database`
+          );
+        });
+      if (!userRow) {
+        return {
+          fail: true,
+        };
+      }
+      req.session.service = serviceName;
+      req.session.authLevel = 1;
+      req.session.username = userRow.username;
+      let auth: boolean | AuthInfoRequest;
+      try {
+        auth = await handleAuth(serviceName, 0, {}, req.session);
+      } catch (e) {
+        req.session = null;
+        throw Error("Undefined Authentication Method");
+      }
+      if (auth === true) {
+        req.session = null;
+        return {
+          success: true,
+        };
+      } else if (auth === false) {
+        req.session = null;
+        return {
+          success: false,
+        };
+      } else
+        return {
+          infoRequest: auth,
+        };
+    },
+    async authenticationInfoResponse(
+      _,
+      { numOfResponses, responses },
+      { req, res }
+    ) {
+      console.log(req.sessionID);
+
+      if (!req.session.username)
+        return {
+          fail: true,
+        };
+      const service = req.session.service;
+      const authLevel = parseInt(req.session.authLevel);
+      const auth = await handleAuth(service, authLevel, responses, req.session);
+      if (auth === true) {
+        req.session = null;
+        return {
+          success: true,
+        };
+      } else if (auth === false) {
+        req.session = null;
+        return {
+          fail: true,
+        };
+      } else {
+        req.session.authLevel++;
+
+        return {
+          infoRequest: auth,
+        };
+      }
+    },
     login(_, { username, password }, { res }) {
       const user = {
         username: "admin",
