@@ -17,9 +17,8 @@ const allTypes = gql`
     id: Float!
     chainName: String!
     scriptFileLocation: String!
-    workingDirectory: String!
     arguments: [String]
-    chain: [String]
+    chain: String
   }
   type User {
     id: ID!

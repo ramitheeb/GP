@@ -8,11 +8,12 @@ const exec = utils.promisify(execCB);
 const errorLog = "src/Commands/CMDChainErrors.log";
 const outputLog = "src/Commands/CMDChainOutput.log";
 
-export const fireCMDChain = async (id: number) => {
+export const fireCMDChain = async (id: number, args: string[]) => {
   const db = await open({
     filename: "./database.db",
     driver: sqlite3.Database,
   });
+
   const row = await db
     .get("SELECT * FROM CommandChains where id = ?", [id])
     .catch((err) => {
@@ -21,6 +22,8 @@ export const fireCMDChain = async (id: number) => {
       );
     });
   if (!row) {
+    console.log("Row not found in database");
+
     db.close();
     return {
       firedSuccessfully: false,
@@ -28,27 +31,11 @@ export const fireCMDChain = async (id: number) => {
     };
   }
 
-  const args: string[] = [];
-  const argRows = await db.all(
-    "SELECT * FROM ChainArguments WHERE chainID = ?",
-    [id]
-  );
-
-  argRows.sort((a, b) => {
-    if (a.argIndex < b.argIndex) return -1;
-    else return 1;
-  });
-
-  for (let i = 0; i < argRows.length; i++) {
-    const element = argRows[i];
-    args.push(element.argument);
-  }
   const CMDChain: CommandChain = {
     id: row.id,
     chainName: row.chainName,
     arguments: args,
     scriptFileLocation: row.scriptFileLocation,
-    workingDirectory: row.workingDirectory,
   };
 
   let command = `"${CMDChain.scriptFileLocation}" `;
@@ -57,20 +44,23 @@ export const fireCMDChain = async (id: number) => {
     command += `${element} `;
   }
 
-  const firedCMD = await exec(command, {}).catch((e) => {
+  const firedCMD = await exec(command).catch((e) => {
     ps.appendFile(
       errorLog,
-      `${CMDChain.chainName} produced an error : "${e}" at ${new Date()}\n`
+      `${CMDChain.chainName} produced an error : ${e} | at ${new Date()}\n`
     ).catch((err) => {
       console.log(`An error occured while writing to ${errorLog} : ${err}`);
     });
   });
   if (!firedCMD) {
+    console.log("An error occured and the command wasn't fired");
+
     return {
       firedSuccessfully: false,
       output: null,
     };
   }
+
   if (firedCMD.stdout !== "") {
     ps.appendFile(
       outputLog,
@@ -84,13 +74,18 @@ export const fireCMDChain = async (id: number) => {
   if (firedCMD.stderr !== "") {
     ps.appendFile(
       errorLog,
-      `${CMDChain.chainName} produced an error : "${
+      `${CMDChain.chainName} produced an error : ${
         firedCMD.stderr
-      }" at ${new Date()}\n`
+      } |  at ${new Date()}\n`
     ).catch((err) => {
       console.log(`An error occured while writing to ${errorLog} : "${err}"`);
     });
+    return {
+      firedSuccessfully: false,
+      output: null,
+    };
   }
+
   return {
     firedSuccessfully: true,
     output: firedCMD.stdout,

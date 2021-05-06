@@ -15,11 +15,26 @@ import {
   stopRuntimeSample,
 } from "./sampler";
 import { getAllAlerts } from "./Alerts/alerts";
+import { setUpScheduledTasks } from "./Scheduler/scheduler";
+import {
+  Alerts,
+  CommandChains,
+  CPU,
+  Disk,
+  Docker,
+  Memory,
+  System,
+  SystemRuntime,
+  Traffic,
+} from "./Models/models";
 // const pubsub = new PubSub();
 
 generalRedisClient.set("numOfSubs", 0);
-
+setUpScheduledTasks().catch((err) => {
+  console.log(`Get rekt lol : ${err}`);
+});
 const server = new ApolloServer({
+  uploads: false,
   subscriptions: {
     path: "/subscriptions",
     onConnect: (connectionParams, webSocket, context) => {
@@ -52,9 +67,24 @@ const server = new ApolloServer({
         });
     },
   },
-  typeDefs,
   resolvers,
-  context: ({ req, res }: any) => ({ req, res, RedisPubSub }),
+  typeDefs,
+  context: ({ req, res }: any) => ({
+    req,
+    res,
+    RedisPubSub,
+    models: {
+      CPU: CPU,
+      Memory: Memory,
+      Disk: Disk,
+      Traffic: Traffic,
+      System: System,
+      SystemRuntime: SystemRuntime,
+      Docker: Docker,
+      Alerts: Alerts,
+      CommandChains: CommandChains,
+    },
+  }),
 });
 
 const app = express();

@@ -61,25 +61,30 @@ export const updateAlert = (updatedAlert: Alert) => {
 };
 
 const alertCheck = async (key: string) => {
-  const currentSamples = await redisTSClient.range(
-    `${key}:runtime`,
-    new TimestampRange(new Date().getTime() - alertInterval),
-    1,
-    new Aggregation("AVG", alertInterval)
-  );
+  const currentSamples = await redisTSClient
+    .range(
+      `${key}:runtime`,
+      new TimestampRange(new Date().getTime() - alertInterval),
+      1,
+      new Aggregation("AVG", alertInterval)
+    )
+    .catch((err) => {
+      console.log(
+        `An error occured trying to fetch current value in alerts : ${err}`
+      );
+    });
+  if (!currentSamples) {
+    return;
+  }
   let componentAlerts: Alert[] = [];
   let checker = alerts.get(key);
   if (checker) {
     componentAlerts = checker.alertList;
   }
-  if (currentSamples && currentSamples[0]) {
+  if (currentSamples[0]) {
     const currentComponent = currentSamples[0];
     for (let i = 0; i < componentAlerts.length; i++) {
       const alert = componentAlerts[i];
-      if (!alert) {
-        console.log(`shouldn't happen`);
-        return;
-      }
 
       if (alert.type === "s") {
         if (
@@ -87,28 +92,35 @@ const alertCheck = async (key: string) => {
           currentComponent.getValue() > alert.start
         ) {
           //Notify
-          //   console.log(`Alert ${alert.AlertName} fired`);
+          // console.log(`Alert ${alert.AlertName} fired`);
         }
       } else if (alert.type === "d") {
         const TSTime = getDayAndHour(new Date(currentComponent.getTimestamp()));
-        const adaptiveAverageSamples = await redisTSClient.range(
-          `${key}:adaptive-average`,
-          new TimestampRange(TSTime, TSTime + convertTimeUnitToMS("h")),
-          1
-        );
-        const adaptiveSigmaSamples = await redisTSClient.range(
-          `${key}:adaptive-sigma`,
-          new TimestampRange(TSTime, TSTime + convertTimeUnitToMS("h")),
-          1
-        );
-
-        if (
-          !adaptiveAverageSamples ||
-          !adaptiveSigmaSamples ||
-          !adaptiveSigmaSamples[0] ||
-          !adaptiveAverageSamples[0]
-        )
-          return;
+        const adaptiveAverageSamples = await redisTSClient
+          .range(
+            `${key}:adaptive-average`,
+            new TimestampRange(TSTime, TSTime + convertTimeUnitToMS("h")),
+            1
+          )
+          .catch((err) => {
+            console.log(
+              `An error occured trying to get adaptive average value : ${err}`
+            );
+          });
+        if (!adaptiveAverageSamples) return;
+        const adaptiveSigmaSamples = await redisTSClient
+          .range(
+            `${key}:adaptive-sigma`,
+            new TimestampRange(TSTime, TSTime + convertTimeUnitToMS("h")),
+            1
+          )
+          .catch((err) => {
+            console.log(
+              `An error occured trying to get adaptive sigma value : ${err}`
+            );
+          });
+        if (!adaptiveSigmaSamples) return;
+        if (!adaptiveSigmaSamples[0] || !adaptiveAverageSamples[0]) return;
         const average = adaptiveAverageSamples[0];
         const sigma = adaptiveSigmaSamples[0];
 

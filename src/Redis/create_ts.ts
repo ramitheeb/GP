@@ -41,6 +41,28 @@ const createForAll = async () => {
       const duplicationPolicy = metric === "traffic" ? "SUM" : undefined;
       await createDatabase(client, labels, key, retention, duplicationPolicy);
     }
+    await client.create(
+      `${metric}:${component}:adaptive-average`,
+      [
+        new Label("Metric", metric),
+        new Label("Component", component),
+        new Label("SF", "average"),
+      ],
+      157700000000,
+      undefined,
+      "LAST"
+    );
+    await client.create(
+      `${metric}:${component}:adaptive-sigma`,
+      [
+        new Label("Metric", metric),
+        new Label("Component", component),
+        new Label("SF", "sigma"),
+      ],
+      157700000000,
+      undefined,
+      "LAST"
+    );
   }
   console.log("Finished creating databases");
 
