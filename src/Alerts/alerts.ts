@@ -4,13 +4,17 @@ import { redisTSClient } from "../Redis/redis_client";
 import { Aggregation, TimestampRange } from "redis-time-series-ts";
 import { getDayAndHour } from "./dynamicAlerts";
 import { convertTimeUnitToMS } from "../Utils/round_up_time";
+import { open } from "sqlite";
+
 const alerts: Map<string, AlertChecker> = new Map<string, AlertChecker>();
 const alertInterval = 6000;
 
-export const getAllAlerts = () => {
-  const db = new sqlite3.Database(
-    "/home/ibrahim-ubuntu/Documents/GP/ServerMonitor/database.db"
-  );
+export const getAllAlerts = async () => {
+  const db = await open({
+    filename: "./database.db",
+    driver: sqlite3.Database,
+  });
+
   db.all("SELECT * FROM Alerts", (err, rows) => {
     if (err) {
       console.log(err);
