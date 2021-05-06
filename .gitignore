@@ -109,3 +109,4 @@ redis/
 
 dump.rdb
 redis/6379.conf
+database.db
