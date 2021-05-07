@@ -109,3 +109,14 @@ redis/
 
 dump.rdb
 redis/6379.conf
+keys/admin-key
+.gitignore
+keys/admin-pub-key.pem
+keys/decrypted
+keys/encrypted
+keys/encrypted.pub
+keys/hello
+keys/hello.pub
+keys/t
+keys/t.pub
+keys/admin-pub-key.pem

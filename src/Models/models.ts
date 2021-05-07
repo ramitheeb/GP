@@ -594,39 +594,37 @@ export const CommandChains = {
         let actualLocation: string = "";
         let dataToBeWritten: string = "";
         if (file) {
-          if (file) {
-            const {
-              filename,
-              mimetype,
-              createReadStream,
-            } = (await file) as FileUpload;
+          const {
+            filename,
+            mimetype,
+            createReadStream,
+          } = (await file) as FileUpload;
 
-            actualLocation = `scripts/${filename}.sh`;
-            const inStream = createReadStream();
-            const readFile = await new Promise<string>((resolve, reject) => {
-              let data = "";
-              inStream.on("data", (chunck) => {
-                data += chunck;
-              });
-              inStream.on("end", () => {
-                resolve(data);
-              });
-              inStream.on("error", (err) => {
-                reject(err);
-              });
-            }).catch((err) => {
-              console.log(
-                `An error occured while trying to read the uploaded file`
-              );
+          actualLocation = `scripts/${filename}.sh`;
+          const inStream = createReadStream();
+          const readFile = await new Promise<string>((resolve, reject) => {
+            let data = "";
+            inStream.on("data", (chunck) => {
+              data += chunck;
             });
-            if (!readFile) {
-              deleteNewRow(
-                insertChainResult.lastID ? insertChainResult.lastID : -1
-              );
-              return false;
-            }
-            dataToBeWritten = readFile;
+            inStream.on("end", () => {
+              resolve(data);
+            });
+            inStream.on("error", (err) => {
+              reject(err);
+            });
+          }).catch((err) => {
+            console.log(
+              `An error occured while trying to read the uploaded file`
+            );
+          });
+          if (!readFile) {
+            deleteNewRow(
+              insertChainResult.lastID ? insertChainResult.lastID : -1
+            );
+            return false;
           }
+          dataToBeWritten = readFile;
         } else {
           actualLocation = `scripts/${insertChainResult.lastID}.sh`;
           dataToBeWritten = chain;

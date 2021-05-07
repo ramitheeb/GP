@@ -190,7 +190,6 @@ const resolvers: IResolvers = {
         filename: "./database.db",
         driver: sqlite3.Database,
       });
-
       const userRow = await db
         .get("SELECT * FROM Users WHERE username = ?", [username])
         .catch((err) => {
@@ -203,23 +202,32 @@ const resolvers: IResolvers = {
           fail: true,
         };
       }
-      req.session.service = serviceName;
-      req.session.authLevel = 1;
-      req.session.username = userRow.username;
+      // req.session.service = serviceName;
+      // req.session.authLevel = 1;
+      // req.session.username = userRow.username;
+      await generalRedisClient.hset("111", {
+        username: username,
+        authLevel: 1,
+        serviceName: serviceName,
+      });
+      await generalRedisClient.expire("111", 60);
       let auth: boolean | AuthInfoRequest;
       try {
         auth = await handleAuth(serviceName, 0, {}, req.session);
       } catch (e) {
-        req.session = null;
+        // req.session = null;
+        await generalRedisClient.del("111");
         throw Error("Undefined Authentication Method");
       }
       if (auth === true) {
-        req.session = null;
+        // req.session = null;
+        await generalRedisClient.del("111");
         return {
           success: true,
         };
       } else if (auth === false) {
-        req.session = null;
+        // req.session = null;
+        await generalRedisClient.del("111");
         return {
           success: false,
         };
@@ -233,28 +241,39 @@ const resolvers: IResolvers = {
       { numOfResponses, responses },
       { req, res }
     ) {
-      console.log(req.sessionID);
-
-      if (!req.session.username)
+      const session = await generalRedisClient.hgetall("111");
+      if (!session)
         return {
           fail: true,
         };
-      const service = req.session.service;
-      const authLevel = parseInt(req.session.authLevel);
+      // console.log(session);
+
+      // if (!req.session.username)
+      //   return {
+      //     fail: true,
+      //   };
+      // const service = req.session.service;
+      // const authLevel = parseInt(req.session.authLevel);
+      const service = session.serviceName;
+      const authLevel = parseInt(session.authLevel);
       const auth = await handleAuth(service, authLevel, responses, req.session);
       if (auth === true) {
-        req.session = null;
+        // req.session = null;
+        await generalRedisClient.del("111");
         return {
           success: true,
         };
       } else if (auth === false) {
-        req.session = null;
+        // req.session = null;
+        await generalRedisClient.del("111");
         return {
           fail: true,
         };
       } else {
         req.session.authLevel++;
-
+        await generalRedisClient.hset("111", {
+          authLevel: authLevel + 1,
+        });
         return {
           infoRequest: auth,
         };

@@ -9,11 +9,16 @@ export const authHandlers: Map<
   ((reponses, session) => Promise<boolean | AuthInfoRequest>)[]
 > = new Map<string, ((reponses) => Promise<boolean | AuthInfoRequest>)[]>();
 
-const keyAuthSignature = async (response, session) => {
-  if (!session.username) return false;
-  const nonce = randomBytes(64);
-  session.nonce = nonce.toString("hex");
+const keyAuthSignature = async (response, sessionCookie) => {
+  // if (!session.username) return false;
+  const session = await generalRedisClient.hgetall("111");
+  if (!session) return false;
 
+  const nonce = randomBytes(64);
+  // session.nonce = nonce.toString("hex");
+  await generalRedisClient.hset("111", {
+    nonce: nonce.toString("hex"),
+  });
   return {
     name: "Key Pair Authentication SHA256",
     instruction: "Sign the following number with your private key",
@@ -24,10 +29,13 @@ const keyAuthSignature = async (response, session) => {
   } as AuthInfoRequest;
 };
 
-const keyAuthHandler = async (responses, session) => {
-  if (!session.username) return false;
-  const username = session.username;
+const keyAuthHandler = async (responses, sessionCookie) => {
+  const session = await generalRedisClient.hgetall("111");
+  // if (!session.username) return false;
+  // const username = session.username;
 
+  if (!session) return false;
+  const username = session.username;
   const db = await open({
     filename: "./database.db",
     driver: sqlite3.Database,
@@ -50,6 +58,7 @@ const keyAuthHandler = async (responses, session) => {
   const verify = createVerify("SHA256");
   verify.update(Buffer.from(session.nonce, "hex"));
   verify.end();
+  // console.log(verify);
 
   const verified = verify.verify(publicKey, Buffer.from(responses[0], "hex"));
   return verified;

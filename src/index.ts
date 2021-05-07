@@ -114,7 +114,7 @@ app.use(
     resave: false,
   })
 );
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use((req, res, next) => {
   next();
@@ -130,7 +130,7 @@ app.use((req, _, next) => {
   next();
 });
 
-server.applyMiddleware({ app, cors: true });
+server.applyMiddleware({ app, cors: corsOptions });
 const httpServer = http.createServer(app);
 server.installSubscriptionHandlers(httpServer);
 
