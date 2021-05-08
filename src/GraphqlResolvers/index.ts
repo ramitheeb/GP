@@ -212,6 +212,10 @@ const resolvers: IResolvers = {
         type,
       });
     },
+    deleteAlert(_, { id }, context) {
+      if (!context.req.username) return;
+      return context.models.Alerts?.deleteAlert(id);
+    },
     async saveCommandChain(
       _,
       { id, chainName, chain, args, argsChanged, scriptFileLocation, file },

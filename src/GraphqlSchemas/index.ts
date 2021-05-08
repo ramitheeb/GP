@@ -61,15 +61,16 @@ const typeDefs = [
     type Mutation {
       login(username: String!, password: String!): User
       alert(
-        start: Float!
-        end: Float!
+        start: Float
+        end: Float
         type: String!
-        rangeName: String!
+        rangeName: String
         metric: String!
         component: String!
         alertName: String!
         id: Float!
       ): Boolean
+      deleteAlert(id: Float!): Boolean
       saveCommandChain(
         id: Float!
         chainName: String!

@@ -23,10 +23,9 @@ export const getAllAlerts = async () => {
 
     if (rows) {
       rows.forEach((value) => addAlert(value));
-      // console.log(rows);
     }
     db.close();
-  });
+  }).then((data) => console.log(data));
 };
 
 export const addAlert = (alert: Alert) => {

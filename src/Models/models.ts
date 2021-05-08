@@ -394,7 +394,7 @@ export const Alerts = {
       const response: any = [];
 
       db.each(
-        "SELECT id,start,end,metric,rangeName,AlertName as alertName  FROM Alerts",
+        "SELECT id,start,type,end,metric,rangeName,AlertName as alertName  FROM Alerts",
         function (err, row) {
           if (err) reject(err);
           else response.push(row);
@@ -467,6 +467,16 @@ export const Alerts = {
           contineuosTriggerCount: 0,
         });
       }
+      db.close();
+    } catch (e) {
+      return false;
+    }
+    return true;
+  },
+  deleteAlert: (id) => {
+    try {
+      const db = new sqlite3.Database("./database.db");
+      db.run("Delete From Alerts WHERE id=?", id);
       db.close();
     } catch (e) {
       return false;
