@@ -74,6 +74,7 @@ const typeDefs = [
         responses: [String]!
       ): AuthenticationRequestResponse
 
+      addPublickKeyUser(username: String!, publickKey: String): Boolean
       login(username: String!, password: String!): User
       alert(
         start: Float!

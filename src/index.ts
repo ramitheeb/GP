@@ -31,6 +31,8 @@ import * as session from "express-session";
 import * as Redis from "ioredis";
 import { randomBytes } from "crypto";
 import { convertTimeUnitToMS } from "./Utils/round_up_time";
+import { verify } from "jsonwebtoken";
+import config from "./config";
 // const pubsub = new PubSub();
 
 let RedisStore = require("connect-redis")(session);
@@ -44,22 +46,33 @@ const server = new ApolloServer({
   uploads: false,
   subscriptions: {
     path: "/subscriptions",
-    onConnect: (connectionParams, webSocket, context) => {
-      generalRedisClient
+    onConnect: async (connectionParams, webSocket, context) => {
+      const accessToken = connectionParams["accessToken"];
+      try {
+        const data = verify(accessToken, config.SECRET) as any;
+      } catch {
+        return false;
+      }
+      let noError = true;
+      await generalRedisClient
         .multi()
         .get("numOfSubs")
         .incr("numOfSubs")
         .exec((err, result) => {
           if (err) {
-            // console.log(`Error at onConnect : ${err}`);
+            noError = false;
             return;
           }
           const numOfSubs = result[0][1];
 
           if (numOfSubs == 0) startRuntimeSample();
         });
+
+      return noError;
     },
     onDisconnect: (webSocket, context) => {
+      console.log("disconnected");
+
       generalRedisClient
         .multi()
         .decr("numOfSubs")
@@ -116,17 +129,13 @@ app.use(
 );
 app.use(cors(corsOptions));
 app.use(cookieParser());
-app.use((req, res, next) => {
-  next();
-});
 
 app.use((req, _, next) => {
   const accessToken = req.cookies["access-token"];
-  // try {
-  //   const data = verify(accessToken, config.SECRET) as any;
-  //   (req as any).username = data.username;
-  // } catch {}
-  (req as any).username = "string";
+  try {
+    const data = verify(accessToken, config.SECRET) as any;
+    (req as any).username = data.username;
+  } catch {}
   next();
 });
 

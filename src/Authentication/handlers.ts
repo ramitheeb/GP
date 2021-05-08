@@ -9,16 +9,16 @@ export const authHandlers: Map<
   ((reponses, session) => Promise<boolean | AuthInfoRequest>)[]
 > = new Map<string, ((reponses) => Promise<boolean | AuthInfoRequest>)[]>();
 
-const keyAuthSignature = async (response, sessionCookie) => {
+const keyAuthSignature = async (response, session) => {
   // if (!session.username) return false;
-  const session = await generalRedisClient.hgetall("111");
+  // const session = await generalRedisClient.hgetall("111");
   if (!session) return false;
 
   const nonce = randomBytes(64);
-  // session.nonce = nonce.toString("hex");
-  await generalRedisClient.hset("111", {
-    nonce: nonce.toString("hex"),
-  });
+  session.nonce = nonce.toString("hex");
+  // await generalRedisClient.hset("111", {
+  //   nonce: nonce.toString("hex"),
+  // });
   return {
     name: "Key Pair Authentication SHA256",
     instruction: "Sign the following number with your private key",
@@ -29,12 +29,11 @@ const keyAuthSignature = async (response, sessionCookie) => {
   } as AuthInfoRequest;
 };
 
-const keyAuthHandler = async (responses, sessionCookie) => {
-  const session = await generalRedisClient.hgetall("111");
-  // if (!session.username) return false;
-  // const username = session.username;
+const keyAuthHandler = async (responses, session) => {
+  // const session = await generalRedisClient.hgetall("111");
+  if (!session.username) return false;
 
-  if (!session) return false;
+  // if (!session) return false;
   const username = session.username;
   const db = await open({
     filename: "./database.db",

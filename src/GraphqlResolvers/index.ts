@@ -9,15 +9,9 @@ import { GraphQLUpload } from "graphql-upload";
 import { generalRedisClient } from "../pubsub";
 import { handleAuth } from "../Authentication/handlers";
 import { AuthInfoRequest } from "../Authentication/modules";
-const getToken = ({ username, password }) =>
-  jwt.sign(
-    {
-      username,
-      password,
-    },
-    config.SECRET,
-    { expiresIn: "20d" }
-  );
+import { isContext } from "vm";
+import { fsOpenFiles } from "systeminformation";
+import { Auth } from "../Authentication/authModel";
 
 const resolvers: IResolvers = {
   GraphQLUpload: GraphQLUpload,
@@ -186,116 +180,38 @@ const resolvers: IResolvers = {
       { username, serviceName, submethods },
       { res, req }
     ) {
-      const db = await open({
-        filename: "./database.db",
-        driver: sqlite3.Database,
-      });
-      const userRow = await db
-        .get("SELECT * FROM Users WHERE username = ?", [username])
-        .catch((err) => {
-          console.log(
-            `An error occured while trying to fetch user from database`
-          );
-        });
-      if (!userRow) {
-        return {
-          fail: true,
-        };
-      }
-      // req.session.service = serviceName;
-      // req.session.authLevel = 1;
-      // req.session.username = userRow.username;
-      await generalRedisClient.hset("111", {
-        username: username,
-        authLevel: 1,
-        serviceName: serviceName,
-      });
-      await generalRedisClient.expire("111", 60);
-      let auth: boolean | AuthInfoRequest;
-      try {
-        auth = await handleAuth(serviceName, 0, {}, req.session);
-      } catch (e) {
-        // req.session = null;
-        await generalRedisClient.del("111");
-        throw Error("Undefined Authentication Method");
-      }
-      if (auth === true) {
-        // req.session = null;
-        await generalRedisClient.del("111");
-        return {
-          success: true,
-        };
-      } else if (auth === false) {
-        // req.session = null;
-        await generalRedisClient.del("111");
-        return {
-          success: false,
-        };
-      } else
-        return {
-          infoRequest: auth,
-        };
+      return await Auth.authenticationRequest(
+        { username, serviceName, submethods },
+        { req }
+      );
     },
     async authenticationInfoResponse(
       _,
       { numOfResponses, responses },
       { req, res }
     ) {
-      const session = await generalRedisClient.hgetall("111");
-      if (!session)
-        return {
-          fail: true,
-        };
-      // console.log(session);
-
-      // if (!req.session.username)
-      //   return {
-      //     fail: true,
-      //   };
-      // const service = req.session.service;
-      // const authLevel = parseInt(req.session.authLevel);
-      const service = session.serviceName;
-      const authLevel = parseInt(session.authLevel);
-      const auth = await handleAuth(service, authLevel, responses, req.session);
-      if (auth === true) {
-        // req.session = null;
-        await generalRedisClient.del("111");
-        return {
-          success: true,
-        };
-      } else if (auth === false) {
-        // req.session = null;
-        await generalRedisClient.del("111");
-        return {
-          fail: true,
-        };
-      } else {
-        req.session.authLevel++;
-        await generalRedisClient.hset("111", {
-          authLevel: authLevel + 1,
-        });
-        return {
-          infoRequest: auth,
-        };
-      }
+      return await Auth.authenticationInfoResponse(
+        { numOfResponses, responses },
+        { req, res }
+      );
+    },
+    async addPublickKeyUser(_, { username, publickKey }, { req }) {
+      return await Auth.addPublickKeyUser({ username, publickKey }, { req });
     },
     login(_, { username, password }, { res }) {
-      const user = {
-        username: "admin",
-        password: "admin",
-      };
-
-      if (user.username !== username)
-        throw new AuthenticationError("this user is not found!");
-
-      const match = password === user.password;
-      if (!match) throw new AuthenticationError("wrong password!");
-
-      const accessToken = getToken(user);
-      res.cookie("access-token", accessToken);
-      return {
-        id: user.username,
-      };
+      // const user = {
+      //   username: "admin",
+      //   password: "admin",
+      // };
+      // if (user.username !== username)
+      //   throw new AuthenticationError("this user is not found!");
+      // const match = password === user.password;
+      // if (!match) throw new AuthenticationError("wrong password!");
+      // // const accessToken = getToken(user);
+      // res.cookie("access-token", accessToken);
+      // return {
+      //   id: user.username,
+      // };
     },
     alert(
       _,
