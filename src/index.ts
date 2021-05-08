@@ -71,8 +71,6 @@ const server = new ApolloServer({
       return noError;
     },
     onDisconnect: (webSocket, context) => {
-      console.log("disconnected");
-
       generalRedisClient
         .multi()
         .decr("numOfSubs")

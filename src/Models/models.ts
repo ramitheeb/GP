@@ -394,7 +394,7 @@ export const Alerts = {
       const response: any = [];
 
       db.each(
-        "SELECT id,start,end,metric,rangeName,AlertName as alertName  FROM Alerts",
+        "SELECT id,type,start,end,metric,component,rangeName,AlertName as alertName  FROM Alerts",
         function (err, row) {
           if (err) reject(err);
           else response.push(row);

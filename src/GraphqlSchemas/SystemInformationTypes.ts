@@ -11,6 +11,7 @@ const allTypes = gql`
     metric: String!
     alertName: String!
     id: Float!
+    type: String!
   }
 
   type CommandChain {

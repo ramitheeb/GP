@@ -20,7 +20,7 @@ const endpoints: string[] = [
   "/let.png",
   "/memories/ofit.jpg",
 ];
-const fileData = fs.readFileSync("time_series_data.log");
+const fileData = fs.readFileSync("temp.log");
 let output: string = "";
 const lines = fileData.toString().split(/\n/);
 for (let i = 0; i < lines.length; i++) {
@@ -40,4 +40,5 @@ for (let i = 0; i < lines.length; i++) {
     // console.log(`${address} \"${endpoint}\" [${time.toISOString(true)}]`);
   }
 }
-fs.writeFileSync("temp", output, { flag: "a" });
+fs.writeFileSync("newtemp", output, { flag: "a" });
+console.log("Almost done");
