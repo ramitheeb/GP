@@ -198,21 +198,6 @@ const resolvers: IResolvers = {
     async addPublickKeyUser(_, { username, publickKey }, { req }) {
       return await Auth.addPublickKeyUser({ username, publickKey }, { req });
     },
-    login(_, { username, password }, { res }) {
-      // const user = {
-      //   username: "admin",
-      //   password: "admin",
-      // };
-      // if (user.username !== username)
-      //   throw new AuthenticationError("this user is not found!");
-      // const match = password === user.password;
-      // if (!match) throw new AuthenticationError("wrong password!");
-      // // const accessToken = getToken(user);
-      // res.cookie("access-token", accessToken);
-      // return {
-      //   id: user.username,
-      // };
-    },
     alert(
       _,
       { start, end, rangeName, metric, alertName, id, component, type },
@@ -246,10 +231,21 @@ const resolvers: IResolvers = {
         file,
       });
     },
-    async fireCommandChain(_, { id, args }, context) {
+    async fireCommandChain(_, { id, args, runWithSUDO }, context) {
       if (!context.req.username) return;
-      return context.models.CommandChains?.fireCommandChain({ id, args });
+      return context.models.CommandChains?.fireCommandChain(
+        { id, args, runWithSUDO },
+        context.req
+      );
     },
+    async fireProtectedCommandChain(_, { password }, context) {
+      if (!context.req.username) return;
+      return context.models.CommandChains?.fireProtectedCommandChain(
+        { password },
+        context.req
+      );
+    },
+
     async deleteCommandChains(_, { id }, context) {
       if (!context.req.username) return;
       context.models.CommanChains.deleteCommandChain({ id });

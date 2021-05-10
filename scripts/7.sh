@@ -1,2 +1,2 @@
 #!/bin/sh
-sudo echo three arguments
+echo "$2"

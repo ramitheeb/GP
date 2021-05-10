@@ -767,7 +767,64 @@ export const CommandChains = {
     }
     return true;
   },
-  fireCommandChain: async ({ id, args }) => {
-    return await fireCMDChain(id, args ? args : []);
+  fireCommandChain: async ({ id, args, runWithSUDO }, req) => {
+    const db = await open({
+      filename: "./database.db",
+      driver: sqlite3.Database,
+    });
+
+    const row = await db
+      .get("SELECT * FROM CommandChains where id = ?", [id])
+      .catch((err) => {
+        console.log(
+          `An error occured while trying to get command chain with id ${id} : ${err}`
+        );
+      });
+    if (!row) {
+      console.log("Row not found in database");
+
+      db.close();
+      return {
+        firedSuccessfully: false,
+        requiresPassword: false,
+        output: null,
+      };
+    }
+    if (row.passwordProtected || runWithSUDO) {
+      req.session.chainID = id;
+      req.session.runWithSUDO = runWithSUDO;
+      req.session.oneTimePassword = generateOneTimePassword();
+      req.session.chainArgs = args;
+      return {
+        firedSuccessfully: false,
+        requiresPassword: true,
+      };
+    }
+    return await fireCMDChain(id, args ? args : [], false, false);
+  },
+  fireProtectedCommandChain: async ({ password }, req) => {
+    if (!req.session.chainID) {
+      return {
+        firedSuccessfully: false,
+        requiresPassword: false,
+        output: null,
+      };
+    }
+    if (password === req.session.oneTimePassword) {
+      return await fireCMDChain(
+        req.session.chainID,
+        req.session.chainArgs,
+        true,
+        req.session.runWithSUDO
+      );
+    }
+    return {
+      firedSuccessfully: false,
+      requiresPassword: false,
+      output: null,
+    };
   },
 };
+export function generateOneTimePassword(): any {
+  return "chainPassword";
+}

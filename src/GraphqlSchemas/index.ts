@@ -75,7 +75,6 @@ const typeDefs = [
       ): AuthenticationRequestResponse
 
       addPublickKeyUser(username: String!, publickKey: String): Boolean
-      login(username: String!, password: String!): User
       alert(
         start: Float!
         end: Float!
@@ -95,7 +94,12 @@ const typeDefs = [
         file: GraphQLUpload
         argsChanged: Boolean
       ): Boolean
-      fireCommandChain(id: Float!, args: [String]): CommandChainOutput
+      fireCommandChain(
+        id: Float!
+        args: [String]
+        runWithSUDO: Boolean
+      ): CommandChainOutput
+      fireProtectedCommandChain(password: String!): CommandChainOutput
       deleteCommandChains(id: Float!): Boolean
     }
 

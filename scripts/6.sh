@@ -1,4 +1,2 @@
 #!/bin/sh
-ls
-cd ..
-ls
+echo no error

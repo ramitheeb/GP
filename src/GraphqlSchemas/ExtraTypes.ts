@@ -2,7 +2,8 @@ import { gql } from "apollo-server-core";
 
 export const CommandChainOutput = gql`
   type CommandChainOutput {
-    firedSuccessfully: Boolean
+    firedSuccessfully: Boolean!
+    requiresPassword: Boolean
     output: String
   }
 `;
