@@ -20,6 +20,7 @@ const allTypes = gql`
     scriptFileLocation: String!
     arguments: [String]
     chain: String
+    passwordProtected: Boolean
   }
   type User {
     id: ID!

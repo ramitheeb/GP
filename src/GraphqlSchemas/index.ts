@@ -93,6 +93,7 @@ const typeDefs = [
         args: [String]
         file: GraphQLUpload
         argsChanged: Boolean
+        passwordProtected: Boolean
       ): Boolean
       fireCommandChain(
         id: Float!

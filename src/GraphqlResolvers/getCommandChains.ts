@@ -1,7 +1,7 @@
 import * as sqlite3 from "sqlite3";
 import { readFileSync } from "fs";
 import { open } from "sqlite";
-import { CommandChain } from "../Commands/modules";
+import { CommandChain } from "../Commands";
 export const getCommandChains = async (_, __, context) => {
   if (!context.req.username) return;
   const db = await open({
@@ -44,6 +44,7 @@ export const getCommandChains = async (_, __, context) => {
       chainName: element.chainName,
       scriptFileLocation: element.scriptFileLocation,
       chain: chains,
+      passwordProtected: element.passwordProtected,
     });
   }
   return CMDChains;

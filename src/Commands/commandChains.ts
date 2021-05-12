@@ -1,10 +1,10 @@
 import { exec as execCB } from "child_process";
 import { promises as ps } from "fs";
 import * as utils from "util";
-import { CommandChain } from "./modules";
 import * as sqlite3 from "sqlite3";
 import { open } from "sqlite";
-import { generateOneTimePassword } from "../Models/models";
+import { CommandChain } from ".";
+import { getChainsEnabled, isSUDO } from "../Configuration";
 const exec = utils.promisify(execCB);
 const errorLog = "src/Commands/CMDChainErrors.log";
 const outputLog = "src/Commands/CMDChainOutput.log";
@@ -15,6 +15,7 @@ export const fireCMDChain = async (
   passwordSent: boolean,
   runWithSUDO: boolean
 ) => {
+  if (!getChainsEnabled()) return null;
   const db = await open({
     filename: "./database.db",
     driver: sqlite3.Database,
@@ -47,16 +48,16 @@ export const fireCMDChain = async (
   };
 
   let command = "";
-  if (!runWithSUDO && process.geteuid() === 0) {
+  if (!runWithSUDO && isSUDO()) {
     command = 'su -c "';
   }
-  command += `./${CMDChain.scriptFileLocation} `;
+  command += `${CMDChain.scriptFileLocation} `;
   for (let i = 0; i < CMDChain.arguments.length; i++) {
     const element = CMDChain.arguments[i];
     command += `${element} `;
   }
   command += "";
-  if (!runWithSUDO && process.geteuid() === 0) {
+  if (!runWithSUDO && isSUDO()) {
     command += '" ibrahim-ubuntu';
   }
 

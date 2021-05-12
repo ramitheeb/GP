@@ -1,10 +1,9 @@
 import { open } from "sqlite";
 import * as sqlite3 from "sqlite3";
-import { handleAuth } from "./handlers";
-import { AuthInfoRequest } from "./modules";
 import * as jwt from "jsonwebtoken";
 import config from "../config";
 import { promises as ps } from "fs";
+import { AuthInfoRequest, handleAuth } from ".";
 const getToken = ({ username }) =>
   jwt.sign({ username }, config.SECRET, { expiresIn: "20d" });
 export const Auth = {

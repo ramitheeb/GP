@@ -1,13 +1,15 @@
 import { Reader, ReaderModel } from "@maxmind/geoip2-node";
 import * as Redis from "ioredis";
+import { getGeoIPDBLocation } from "../Configuration";
+import { generateRedisClient } from "../Redis";
 export const findDemographic = async () => {
-  const redisCilent = new Redis();
+  console.log("analyzing");
+
+  const redisCilent = generateRedisClient();
   let reader: ReaderModel;
   let addresses: string[] | void = [];
   try {
-    reader = await Reader.open(
-      "./src/Nginx/GeoLite2-Country_20210309/GeoLite2-Country.mmdb"
-    );
+    reader = await Reader.open(getGeoIPDBLocation());
   } catch (e) {
     console.log(`An error occured while opening the GeoIP DB : ${e}`);
     return;

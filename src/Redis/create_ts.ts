@@ -29,18 +29,18 @@ const createForAll = async () => {
   for (let i = 0; i < metrics.length; i++) {
     const metric = metrics[i];
     const component = components[i];
-    for (let j = 0; j < periods.length; j++) {
-      const period = periods[j];
-      const retention = retentions[j];
-      const key = `${metric}:${component}:${period}`;
-      const labels = [
-        new Label("Metric", metric),
-        new Label("Component", component),
-        new Label("Period", period),
-      ];
-      const duplicationPolicy = metric === "traffic" ? "SUM" : undefined;
-      await createDatabase(client, labels, key, retention, duplicationPolicy);
-    }
+    // for (let j = 0; j < periods.length; j++) {
+    //   const period = periods[j];
+    //   const retention = retentions[j];
+    //   const key = `${metric}:${component}:${period}`;
+    //   const labels = [
+    //     new Label("Metric", metric),
+    //     new Label("Component", component),
+    //     new Label("Period", period),
+    //   ];
+    //   const duplicationPolicy = metric === "traffic" ? "SUM" : undefined;
+    //   await createDatabase(client, labels, key, retention, duplicationPolicy);
+    // }
     await client.create(
       `${metric}:${component}:adaptive-average`,
       [

@@ -1,42 +1,29 @@
 import * as express from "express";
 import * as http from "http";
-import { ApolloServer, gql } from "apollo-server-express";
+import { ApolloServer } from "apollo-server-express";
 import typeDefs from "./GraphqlSchemas";
 import resolvers from "./GraphqlResolvers";
 import * as cookieParser from "cookie-parser";
 import * as cors from "cors";
-import * as systemInformation from "systeminformation";
 import { RedisPubSub } from "graphql-redis-subscriptions";
-import { generalRedisClient, pubsub } from "./pubsub";
 import {
   startRuntimeSample,
   startSampling,
   stopRuntimeSample,
 } from "./sampler";
-import { getAllAlerts } from "./Alerts/alerts";
-import { setUpScheduledTasks } from "./Scheduler/scheduler";
-import {
-  Alerts,
-  CommandChains,
-  CPU,
-  Disk,
-  Docker,
-  Memory,
-  System,
-  SystemRuntime,
-  Traffic,
-} from "./Models/models";
-import { initAuthHandlers } from "./Authentication/handlers";
+
 import * as session from "express-session";
-import * as Redis from "ioredis";
 import { randomBytes } from "crypto";
-import { convertTimeUnitToMS } from "./Utils/round_up_time";
 import { verify } from "jsonwebtoken";
 import config from "./config";
-// const pubsub = new PubSub();
+import { setUpAlerts } from "./Alerts";
+import { initAuthHandlers } from "./Authentication";
+import { setUpScheduledTasks } from "./Scheduler";
+import { convertTimeUnitToMS } from "./Utils";
 
 let RedisStore = require("connect-redis")(session);
-let redisSessionClient = new Redis();
+import { generalRedisClient, generateRedisClient } from "./Redis";
+import { allowedModels } from "./Configuration";
 
 generalRedisClient.set("numOfSubs", 0);
 setUpScheduledTasks();
@@ -96,22 +83,14 @@ const server = new ApolloServer({
   },
   resolvers,
   typeDefs,
-  context: ({ req, res }: any) => ({
-    req,
-    res,
-    RedisPubSub,
-    models: {
-      CPU: CPU,
-      Memory: Memory,
-      Disk: Disk,
-      Traffic: Traffic,
-      System: System,
-      SystemRuntime: SystemRuntime,
-      Docker: Docker,
-      Alerts: Alerts,
-      CommandChains: CommandChains,
-    },
-  }),
+  context: ({ req, res }: any) => {
+    return {
+      req,
+      res,
+      RedisPubSub,
+      models: allowedModels,
+    };
+  },
 });
 
 const app = express();
@@ -125,7 +104,7 @@ app.use(
   session({
     name: "authID",
     secret: randomBytes(8).toString("hex"),
-    store: new RedisStore({ client: redisSessionClient }),
+    store: new RedisStore({ client: generateRedisClient() }),
     cookie: {
       maxAge: convertTimeUnitToMS("m") * 2,
     },
@@ -139,11 +118,12 @@ app.use(cookieParser());
 
 app.use((req, _, next) => {
   const accessToken = req.cookies["access-token"];
-  // try {
-  //   const data = verify(accessToken, config.SECRET) as any;
-  //   (req as any).username = data.username;
-  // } catch {}
-  (req as any).username = "user";
+  try {
+    const data = verify(accessToken, config.SECRET) as any;
+    (req as any).username = data.username;
+  } catch {}
+  // (req as any).username = "user";
+
   next();
 });
 
@@ -158,5 +138,4 @@ httpServer.listen({ port: 4000 }, () => {
 });
 
 startSampling();
-getAllAlerts();
-//systemInformation.dockerContainers().then((date) => console.log(date));
+setUpAlerts();
