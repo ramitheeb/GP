@@ -1,19 +1,23 @@
 import * as systemInformation from "systeminformation";
-import { pubsub } from "./pubsub";
+
+import * as Redis from "ioredis";
+import { getSampleRate, getSubscriptionRate } from "./Configuration";
 import {
   CPU_LOAD_TS_KEY,
   DISK_TS_KEY,
+  generateRedisClient,
   MEMORY_TS_KEY,
+  pubsub,
   redisWriteTSData,
-} from "./Redis/redis_client";
-import * as Redis from "ioredis";
+} from "./Redis";
+
 let historicRuntimeSamplerTimerId;
 let nonHistoricRuntimeSamplerTimerId;
 let histiorySamplerTimerId;
 
-const historicRuntimeSampleFrequency = 2000;
-const nonHistoricRuntimeSampleFrequency = 1000;
-const historySampleFrequency = 1000;
+const historicRuntimeSampleFrequency = getSubscriptionRate();
+const nonHistoricRuntimeSampleFrequency = getSubscriptionRate();
+const historySampleFrequency = getSampleRate();
 
 const MEM_SUBSCRIPTION_NAME = "NEW_MEM";
 const DISK_SUBSCRIPTION_NAME = "DISK_DATA";
@@ -22,13 +26,11 @@ const CPU_LOAD_SUBSCRIPTION_NAME = "CURRENT_CPU_LOAD";
 const PROCESS_DATA_SUBSCRIPTION_NAME = "PROCESSES_DATA";
 const CONTAINER_STATUS_SUBSCRIPTION_NAME = "CONTAINER_STATUS";
 
-const redisSubscriptionCheckClient = new Redis();
+const redisSubscriptionCheckClient = generateRedisClient();
 
 const historicRuntimeSample = async () => {
-  const subscriptionsList: String[] = await redisSubscriptionCheckClient.send_command(
-    "PUBSUB",
-    ["CHANNELS"]
-  );
+  const subscriptionsList: String[] =
+    await redisSubscriptionCheckClient.send_command("PUBSUB", ["CHANNELS"]);
 
   systemInformation.mem().then((data) => {
     const timestamp = new Date().getTime();
@@ -112,10 +114,8 @@ const historicNonRuntimeSample = async () => {
 };
 
 const nonHistoricRuntimeSample = async () => {
-  const subscriptionsList: String[] = await redisSubscriptionCheckClient.send_command(
-    "PUBSUB",
-    ["CHANNELS"]
-  );
+  const subscriptionsList: String[] =
+    await redisSubscriptionCheckClient.send_command("PUBSUB", ["CHANNELS"]);
 
   if (subscriptionsList.includes(TIME_SUBSCRIPTION_NAME)) {
     pubsub.publish(TIME_SUBSCRIPTION_NAME, { Time: systemInformation.time() });

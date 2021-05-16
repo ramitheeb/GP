@@ -1,16 +1,16 @@
-import { Alert, AlertChecker } from "./module";
 import * as sqlite3 from "sqlite3";
-import { redisTSClient } from "../Redis/redis_client";
 import { Aggregation, TimestampRange } from "redis-time-series-ts";
-import { getDayAndHour } from "./dynamicAlerts";
-import { convertTimeUnitToMS } from "../Utils/round_up_time";
+import { NotifyAll } from "../notifier";
+import { Alert, AlertChecker, getDayAndHour } from ".";
+import { getAlertCheckRate, getAlertsEnabled, getIP } from "../Configuration";
+import { redisTSClient } from "../Redis";
+import { convertTimeUnitToMS } from "../Utils";
 const alerts: Map<string, AlertChecker> = new Map<string, AlertChecker>();
-const alertInterval = 6000;
+const alertInterval = getAlertCheckRate();
 
-export const getAllAlerts = () => {
-  const db = new sqlite3.Database(
-    "/home/ibrahim-ubuntu/Documents/GP/ServerMonitor/database.db"
-  );
+export const setUpAlerts = () => {
+  if (!getAlertsEnabled()) return;
+  const db = new sqlite3.Database("./database.db");
   db.all("SELECT * FROM Alerts", (err, rows) => {
     if (err) {
       console.log(err);
@@ -32,7 +32,7 @@ export const addAlert = (alert: Alert) => {
     alerts.set(key, {
       alertList: [alert],
       timerID: setInterval(() => {
-        alertCheck(key);
+        alertCheck(key, alert);
       }, alertInterval),
     });
   } else {
@@ -56,7 +56,7 @@ export const updateAlert = (updatedAlert: Alert) => {
   }
 };
 
-const alertCheck = async (key: string) => {
+const alertCheck = async (key: string, alert: Alert) => {
   const currentSamples = await redisTSClient
     .range(
       `${key}:runtime`,
@@ -88,7 +88,12 @@ const alertCheck = async (key: string) => {
           currentComponent.getValue() > alert.start
         ) {
           //Notify
-          // console.log(`Alert ${alert.AlertName} fired`);
+          console.log(`Alert ${alert.AlertName} fired`);
+          NotifyAll({
+            body: `${alert.metric}'s ${alert.component} has exceeded ${alert.rangeName} and ${alert.AlertName} was fired`,
+            title: alert.AlertName,
+            deep_link: `http://${getIP()}:3006/`,
+          });
         }
       } else if (alert.type === "d") {
         const TSTime = getDayAndHour(new Date(currentComponent.getTimestamp()));
@@ -130,6 +135,11 @@ const alertCheck = async (key: string) => {
           if (alert.contineuosTriggerCount === 4) {
             //Notify
             // console.log(`Alert ${alert.AlertName} fired`);
+            // NotifyAll({
+            //   body: `${alert.metric}'s ${alert.component} has exceeded ${alert.rangeName} and ${alert.AlertName} was fired`,
+            //   title: alert.AlertName,
+            //   deep_link: `http://${getIP()}:3006/`,
+            // });
           }
         } else {
           alert.contineuosTriggerCount = 0;

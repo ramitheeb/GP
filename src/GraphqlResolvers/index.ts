@@ -1,17 +1,9 @@
-import * as jwt from "jsonwebtoken";
 import { AuthenticationError, IResolvers, withFilter } from "apollo-server";
-import config from "../config";
-import { open } from "sqlite";
-import * as sqlite3 from "sqlite3";
+
 import { GraphQLJSONObject } from "graphql-type-json";
 
 import { GraphQLUpload } from "graphql-upload";
-import { generalRedisClient } from "../pubsub";
-import { handleAuth } from "../Authentication/handlers";
-import { AuthInfoRequest } from "../Authentication/modules";
-import { isContext } from "vm";
-import { fsOpenFiles } from "systeminformation";
-import { Auth } from "../Authentication/authModel";
+import { Auth } from "../Authentication";
 
 const resolvers: IResolvers = {
   GraphQLUpload: GraphQLUpload,
@@ -217,11 +209,7 @@ const resolvers: IResolvers = {
     },
     async saveCommandChain(
       _,
-      { id, chainName, chain, args, argsChanged, scriptFileLocation, file },
-      context
-    ) {
-      if (!context.req.username) return;
-      context.models.CommandChains?.saveCommandChain({
+      {
         id,
         chainName,
         chain,
@@ -229,6 +217,20 @@ const resolvers: IResolvers = {
         argsChanged,
         scriptFileLocation,
         file,
+        passwordProtected,
+      },
+      context
+    ) {
+      if (!context.req.username) return;
+      return context.models.CommandChains?.saveCommandChain({
+        id,
+        chainName,
+        chain,
+        args,
+        argsChanged,
+        scriptFileLocation,
+        file,
+        passwordProtected,
       });
     },
     async fireCommandChain(_, { id, args, runWithSUDO }, context) {
@@ -248,7 +250,7 @@ const resolvers: IResolvers = {
 
     async deleteCommandChains(_, { id }, context) {
       if (!context.req.username) return;
-      context.models.CommanChains.deleteCommandChain({ id });
+      return context.models.CommandChains?.deleteCommandChain({ id });
     },
   },
 };

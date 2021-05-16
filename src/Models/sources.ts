@@ -3,28 +3,7 @@ import { ExpressContext } from "apollo-server-express";
 import * as si from "systeminformation";
 import * as sqlite3 from "sqlite3";
 import { open } from "sqlite";
-import { generalRedisClient } from "../pubsub";
-import {
-  dayQueryLength,
-  longTimeSeriesPeriod,
-  mediumTimeSeriesPeriod,
-  monthQueryLength,
-  shortTimeSeriesPeriod,
-  weekQueryLength,
-  yearQueryLength,
-} from "../Redis/periods";
-import {
-  CPU_LOAD_TS_KEY,
-  DISK_TS_KEY,
-  MEMORY_TS_KEY,
-  redisReadTSData,
-  TRAFFIC_TS_KEY,
-} from "../Redis/redis_client";
-import {
-  CommandChain,
-  DemographicGeoStatisticsSample,
-  EndpointStatisticsSample,
-} from "./modules";
+
 import { readFileSync } from "fs";
 export const RedisTSModel = {
   //   getCPUHistory: async (option: string, toDate: number, fromDate: number) => {

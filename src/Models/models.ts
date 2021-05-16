@@ -1,36 +1,42 @@
-import { DataSource } from "apollo-datasource";
-import { ExpressContext, withFilter } from "apollo-server-express";
+import { withFilter } from "apollo-server-express";
 import * as si from "systeminformation";
 import * as sqlite3 from "sqlite3";
 import { promises as ps } from "fs";
 import { open } from "sqlite";
-import { generalRedisClient, pubsub } from "../pubsub";
+
+import { readFileSync } from "fs";
+import { FileUpload } from "graphql-upload";
+
+import { addAlert, updateAlert } from "../Alerts";
+import { fireCMDChain } from "../Commands";
 import {
-  dayQueryLength,
-  longTimeSeriesPeriod,
-  mediumTimeSeriesPeriod,
-  monthQueryLength,
-  shortTimeSeriesPeriod,
-  weekQueryLength,
-  yearQueryLength,
-} from "../Redis/periods";
-import {
-  CPU_LOAD_TS_KEY,
-  DISK_TS_KEY,
-  MEMORY_TS_KEY,
-  redisReadTSData,
-  TRAFFIC_TS_KEY,
-} from "../Redis/redis_client";
+  getGroupID,
+  getScriptsDir,
+  getSUDOChainsEnabled,
+  getUserID,
+} from "../Configuration";
 import {
   CommandChain,
   DemographicGeoStatisticsSample,
   EndpointStatisticsSample,
-} from "./modules";
-import { readFileSync } from "fs";
-import { addAlert, updateAlert } from "../Alerts/alerts";
-import { FileUpload, GraphQLUpload } from "graphql-upload";
-import { fireCMDChain } from "../Commands/commandChains";
-
+} from ".";
+import {
+  CPU_LOAD_TS_KEY,
+  dayQueryLength,
+  DISK_TS_KEY,
+  generalRedisClient,
+  longTimeSeriesPeriod,
+  mediumTimeSeriesPeriod,
+  MEMORY_TS_KEY,
+  monthQueryLength,
+  pubsub,
+  redisReadTSData,
+  shortTimeSeriesPeriod,
+  TRAFFIC_TS_KEY,
+  weekQueryLength,
+  yearQueryLength,
+} from "../Redis";
+export const trackedModels = new Map<string, any>();
 export const CPU = {
   getCPUData: () => si.cpu(),
   getCPUCacheData: () => si.cpuCache(),
@@ -104,6 +110,7 @@ export const CPU = {
     };
   },
 };
+trackedModels.set("CPU", CPU);
 
 export const Memory = {
   getMemData: async () => {
@@ -173,6 +180,7 @@ export const Memory = {
     };
   },
 };
+trackedModels.set("Memory", Memory);
 
 export const Disk = {
   getDiskData: async () => {
@@ -256,6 +264,7 @@ export const Disk = {
     };
   },
 };
+trackedModels.set("Disk", Disk);
 
 export const Traffic = {
   getTrafficHistory: async (
@@ -361,6 +370,7 @@ export const System = {
   getOSInfo: () => si.osInfo(),
   subscribeToTime: () => pubsub.asyncIterator("TIME_DATA"),
 };
+trackedModels.set("System", System);
 
 export const SystemRuntime = {
   getProcessesData: () => si.processes(),
@@ -386,6 +396,7 @@ export const Docker = {
     }
   ),
 };
+trackedModels.set("Docker", Docker);
 
 export const Alerts = {
   getAlerts: () =>
@@ -510,15 +521,17 @@ export const CommandChains = {
       });
       args = argRows.map((item) => item.argument);
       const chains = readFileSync(element.scriptFileLocation).toString();
-      chains;
+
       CMDChains.push({
         id: element.id,
         arguments: args,
         chainName: element.chainName,
         scriptFileLocation: element.scriptFileLocation,
         chain: chains,
+        passwordProtected: element.passwordProtected,
       });
     }
+
     return CMDChains;
   },
   saveCommandChain: async ({
@@ -529,11 +542,8 @@ export const CommandChains = {
     argsChanged,
     scriptFileLocation,
     file,
+    passwordProtected,
   }) => {
-    // console.log("Inside save command chain");
-    // console.log(
-    //   `id  :${id}, chain name : ${chainName}, script file location : ${scriptFileLocation}, chain : ${chain}, working directory : ${workingDirectory}, arguments : ${args}`
-    // );
     const db = await open({
       filename: "./database.db",
       driver: sqlite3.Database,
@@ -551,19 +561,18 @@ export const CommandChains = {
 
     try {
       if (id === -1) {
-        console.log("Inserting into database");
         if (!args) args = [];
 
         // will be changed below to accomadate multiple chains with the same name
-        if (!scriptFileLocation) scriptFileLocation = `scripts/${chainName}.sh`;
-        // console.log(
-        //   `id  :${id}, chain name : ${chainName}, script file location : ${scriptFileLocation}, chain : ${chain}, working directory : ${workingDirectory}, arguments : ${args}`
-        // );
+        if (!scriptFileLocation)
+          scriptFileLocation = `${getScriptsDir()}/${chainName}.sh`;
+
         const insertChainResult = await db
-          .run("INSERT INTO CommandChains VALUES (?,?,?)", [
+          .run("INSERT INTO CommandChains VALUES (?,?,?,?)", [
             null,
             chainName,
             scriptFileLocation,
+            passwordProtected | 0,
           ])
           .catch((err) => {
             console.log(`An error occured trying to insert : ${err}`);
@@ -594,13 +603,10 @@ export const CommandChains = {
         let actualLocation: string = "";
         let dataToBeWritten: string = "";
         if (file) {
-          const {
-            filename,
-            mimetype,
-            createReadStream,
-          } = (await file) as FileUpload;
+          const { filename, mimetype, createReadStream } =
+            (await file) as FileUpload;
 
-          actualLocation = `scripts/${filename}.sh`;
+          actualLocation = `${getScriptsDir()}/${filename}.sh`;
           const inStream = createReadStream();
           const readFile = await new Promise<string>((resolve, reject) => {
             let data = "";
@@ -626,13 +632,15 @@ export const CommandChains = {
           }
           dataToBeWritten = readFile;
         } else {
-          actualLocation = `scripts/${insertChainResult.lastID}.sh`;
+          actualLocation = `${getScriptsDir()}/${insertChainResult.lastID}.sh`;
           dataToBeWritten = chain;
           // console.log(`Changing file location into ${actualLocation}`);
         }
         try {
           await ps.writeFile(actualLocation, `#!/bin/sh\n${dataToBeWritten}`);
+          await ps.chown(actualLocation, await getUserID(), await getGroupID());
           await ps.chmod(actualLocation, 0o700);
+
           const updateChainResult = await db
             .run(
               "UPDATE CommandChains set scriptFileLocation = ? where id = ?",
@@ -643,6 +651,7 @@ export const CommandChains = {
                 `An error occured trying to update location : ${err}`
               );
             });
+
           if (!updateChainResult) {
             deleteNewRow(
               insertChainResult.lastID ? insertChainResult.lastID : -1
@@ -655,9 +664,7 @@ export const CommandChains = {
           );
         }
       } else if (id >= 0) {
-        console.log("Updating chain");
         if (chain) {
-          console.log("new chain inserted");
           try {
             await ps.writeFile(scriptFileLocation, `#!/bin/sh\n${chain}`);
           } catch (e) {
@@ -768,6 +775,7 @@ export const CommandChains = {
     return true;
   },
   fireCommandChain: async ({ id, args, runWithSUDO }, req) => {
+    if (runWithSUDO && !getSUDOChainsEnabled()) return null;
     const db = await open({
       filename: "./database.db",
       driver: sqlite3.Database,
@@ -825,6 +833,7 @@ export const CommandChains = {
     };
   },
 };
+
 export function generateOneTimePassword(): any {
-  return "chainPassword";
+  return "7D7D7D";
 }

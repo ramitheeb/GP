@@ -1,14 +1,12 @@
 import { Aggregation, Sample, TimestampRange } from "redis-time-series-ts";
 import {
+  generateRedisClient,
   MEASURED_COMPONENTS,
   MEASURED_METRICS,
-  redisReadTSData,
   redisTSClient,
   redisWriteTSData,
-} from "../Redis/redis_client";
-import { convertTimeUnitToMS, roundUpTime } from "../Utils/round_up_time";
-import * as Redis from "ioredis";
-const generalRedisClient = new Redis();
+} from "../Redis";
+import { convertTimeUnitToMS, roundUpTime } from "../Utils";
 
 export const getLastFridayTimestamp = (timestamp: number) => {
   const currentDay = new Date(timestamp).getUTCDay();
@@ -34,7 +32,9 @@ export const getDayAndHour = (date: Date) => {
 };
 
 export const analyzeMetrics = async () => {
-  for (let i = 0; i < MEASURED_METRICS.length; i++) {
+  console.log(MEASURED_METRICS);
+
+  for (let i = 0; i < MEASURED_METRICS.length - 1; i++) {
     await analyze(MEASURED_METRICS[i], MEASURED_COMPONENTS[i]).catch((err) => {
       console.log(
         `An error occured while tryig to analyze metric${i} : ${err}`
@@ -44,19 +44,19 @@ export const analyzeMetrics = async () => {
 };
 
 const analyze = async (metric: string, component: string) => {
+  const redisClient = generateRedisClient();
   const key = `${metric}:${component}`;
-  console.log(`adaptiveMetricsAnalysis : analyzing ${key}`);
 
   //Get information about previous samples
   let oldSamplesStart = 0;
   let oldSamplesEnd = 0;
-  const prevSamplesStartString = await generalRedisClient
+  const prevSamplesStartString = await redisClient
     .get(`${key}:adaptive-average:from-date`)
     .catch((e) => {
       console.log(`Error getting from date : ${e}`);
     });
 
-  const prevSamplesEndString = await generalRedisClient
+  const prevSamplesEndString = await redisClient
     .get(`${key}:adaptive-average:to-date`)
     .catch((e) => {
       console.log(`Error getting to date : ${e}`);
@@ -124,19 +124,21 @@ const analyze = async (metric: string, component: string) => {
         const currentTime = currentHour + convertTimeUnitToMS("W") * j;
         const nextTime = nextHour + convertTimeUnitToMS("W") * j;
 
-        const newSample = ((await redisTSClient
-          .range(
-            `${key}:medium`,
-            new TimestampRange(
-              newSamplesStart + currentTime,
-              newSamplesStart + nextTime
-            ),
-            1,
-            new Aggregation("avg", convertTimeUnitToMS("h"))
-          )
-          .catch((e) => {
-            console.log(`Error getting new sample : ${e}`);
-          })) as Sample[])?.[0];
+        const newSample = (
+          (await redisTSClient
+            .range(
+              `${key}:medium`,
+              new TimestampRange(
+                newSamplesStart + currentTime,
+                newSamplesStart + nextTime
+              ),
+              1,
+              new Aggregation("avg", convertTimeUnitToMS("h"))
+            )
+            .catch((e) => {
+              console.log(`Error getting new sample : ${e}`);
+            })) as Sample[]
+        )?.[0];
         if (newSample) {
           values.push(newSample.getValue());
           newSampleSum += newSample.getValue();
@@ -172,35 +174,39 @@ const analyze = async (metric: string, component: string) => {
       let newSampleVarianceSquare: number = 0;
       let existingSampleCount: number = 0;
       values = [];
-      const sampleAVG = ((await redisTSClient
-        .range(
-          `${key}:adaptive-average`,
-          new TimestampRange(currentHour, nextHour),
-          1
-        )
-        .catch((err) => {
-          console.log(
-            `An error occured while trying to get sample avg value : ${err}`
-          );
-        })) as Sample[])?.[0];
+      const sampleAVG = (
+        (await redisTSClient
+          .range(
+            `${key}:adaptive-average`,
+            new TimestampRange(currentHour, nextHour),
+            1
+          )
+          .catch((err) => {
+            console.log(
+              `An error occured while trying to get sample avg value : ${err}`
+            );
+          })) as Sample[]
+      )?.[0];
 
       for (let j = 0; j < numOfNewSamples; j++) {
         const currentTime = currentHour + convertTimeUnitToMS("W") * j;
         const nextTime = nextHour + convertTimeUnitToMS("W") * j;
 
-        const newSample = ((await redisTSClient
-          .range(
-            `${key}:medium`,
-            new TimestampRange(
-              newSamplesStart + currentTime,
-              newSamplesStart + nextTime
-            ),
-            1,
-            new Aggregation("avg", convertTimeUnitToMS("h"))
-          )
-          .catch((e) => {
-            console.log(`Error getting new sample (sigma) : ${e}`);
-          })) as Sample[])?.[0];
+        const newSample = (
+          (await redisTSClient
+            .range(
+              `${key}:medium`,
+              new TimestampRange(
+                newSamplesStart + currentTime,
+                newSamplesStart + nextTime
+              ),
+              1,
+              new Aggregation("avg", convertTimeUnitToMS("h"))
+            )
+            .catch((e) => {
+              console.log(`Error getting new sample (sigma) : ${e}`);
+            })) as Sample[]
+        )?.[0];
         if (newSample) {
           values.push(newSample?.getValue());
           newSampleVarianceSquare += Math.pow(
@@ -235,11 +241,8 @@ const analyze = async (metric: string, component: string) => {
     }
 
     //Set the range values in redis
-    generalRedisClient.set(
-      `${key}:adaptive-average:from-date`,
-      newSamplesStart
-    );
-    generalRedisClient.set(`${key}:adaptive-average:to-date`, newSamplesEnd);
+    redisClient.set(`${key}:adaptive-average:from-date`, newSamplesStart);
+    redisClient.set(`${key}:adaptive-average:to-date`, newSamplesEnd);
     // console.log(`New "old" range is [${newSamplesStart},${newSamplesEnd}]`);
   } else {
     const numOfTotalSumples = numOfOldSamples + numOfNewSamples;
@@ -260,17 +263,19 @@ const analyze = async (metric: string, component: string) => {
 
         const currentTime = currentHour + convertTimeUnitToMS("W") * j;
         const nextTime = nextHour + convertTimeUnitToMS("W") * j;
-        const newSample: Sample = ((await redisTSClient
-          .range(
-            `${key}:medium`,
-            new TimestampRange(
-              newSamplesStart + currentTime,
-              newSamplesStart + nextTime
-            ),
-            1,
-            new Aggregation("avg", convertTimeUnitToMS("h"))
-          )
-          .catch((err) => {})) as Sample[])?.[0];
+        const newSample: Sample = (
+          (await redisTSClient
+            .range(
+              `${key}:medium`,
+              new TimestampRange(
+                newSamplesStart + currentTime,
+                newSamplesStart + nextTime
+              ),
+              1,
+              new Aggregation("avg", convertTimeUnitToMS("h"))
+            )
+            .catch((err) => {})) as Sample[]
+        )?.[0];
         if (newSample) {
           newValues.push(newSample as Sample);
           newSampleSum += (newSample as Sample).getValue();
@@ -279,17 +284,19 @@ const analyze = async (metric: string, component: string) => {
 
         //Subtract extra values
         if (numOfOldSamples + j > 12) {
-          const prevSample = ((await redisTSClient
-            .range(
-              `${key}:medium`,
-              new TimestampRange(
-                oldSamplesStart + currentTime,
-                oldSamplesStart + nextTime
-              ),
-              1,
-              new Aggregation("avg", convertTimeUnitToMS("h"))
-            )
-            .catch((err) => {})) as Sample[])?.[0];
+          const prevSample = (
+            (await redisTSClient
+              .range(
+                `${key}:medium`,
+                new TimestampRange(
+                  oldSamplesStart + currentTime,
+                  oldSamplesStart + nextTime
+                ),
+                1,
+                new Aggregation("avg", convertTimeUnitToMS("h"))
+              )
+              .catch((err) => {})) as Sample[]
+          )?.[0];
           if (prevSample) {
             prevValues.push(prevSample);
             prevSampleSum += prevSample.getValue();
@@ -298,17 +305,19 @@ const analyze = async (metric: string, component: string) => {
         }
       }
 
-      const adaptiveAVGSample = ((await redisTSClient
-        .range(
-          `${key}:adaptive-average`,
-          new TimestampRange(currentHour, nextHour),
-          1
-        )
-        .catch((err) => {
-          console.log(
-            `An error occured trying to retrieve old average value : ${err}`
-          );
-        })) as Sample[])?.[0];
+      const adaptiveAVGSample = (
+        (await redisTSClient
+          .range(
+            `${key}:adaptive-average`,
+            new TimestampRange(currentHour, nextHour),
+            1
+          )
+          .catch((err) => {
+            console.log(
+              `An error occured trying to retrieve old average value : ${err}`
+            );
+          })) as Sample[]
+      )?.[0];
 
       let adaptiveAVG: number = 0;
       if (adaptiveAVGSample) adaptiveAVG = adaptiveAVGSample.getValue();
@@ -374,13 +383,15 @@ const analyze = async (metric: string, component: string) => {
       let existingPrevSampleCount: number = 0;
       let newValues: Sample[] = [];
       let prevValues: Sample[] = [];
-      const adaptiveAVGSample = ((await redisTSClient
-        .range(
-          `${key}:adaptive-average`,
-          new TimestampRange(currentHour, nextHour),
-          1
-        )
-        .catch((err) => {})) as Sample[])?.[0];
+      const adaptiveAVGSample = (
+        (await redisTSClient
+          .range(
+            `${key}:adaptive-average`,
+            new TimestampRange(currentHour, nextHour),
+            1
+          )
+          .catch((err) => {})) as Sample[]
+      )?.[0];
       let adaptiveAVG: number = 0;
 
       if (adaptiveAVGSample) adaptiveAVG = adaptiveAVGSample.getValue();
@@ -390,17 +401,19 @@ const analyze = async (metric: string, component: string) => {
         const currentTime = currentHour + convertTimeUnitToMS("W") * j;
         const nextTime = nextHour + convertTimeUnitToMS("W") * j;
 
-        const newSample: Sample = ((await redisTSClient
-          .range(
-            `${key}:medium`,
-            new TimestampRange(
-              newSamplesStart + currentTime,
-              newSamplesStart + nextTime
-            ),
-            1,
-            new Aggregation("avg", convertTimeUnitToMS("h"))
-          )
-          .catch((err) => {})) as Sample[])?.[0];
+        const newSample: Sample = (
+          (await redisTSClient
+            .range(
+              `${key}:medium`,
+              new TimestampRange(
+                newSamplesStart + currentTime,
+                newSamplesStart + nextTime
+              ),
+              1,
+              new Aggregation("avg", convertTimeUnitToMS("h"))
+            )
+            .catch((err) => {})) as Sample[]
+        )?.[0];
         if (newSample) {
           newValues.push(newSample as Sample);
           newSampleVarianceSquare += Math.pow(
@@ -411,17 +424,19 @@ const analyze = async (metric: string, component: string) => {
         }
 
         if (numOfOldSamples + j > 12) {
-          const prevSample = ((await redisTSClient
-            .range(
-              `${key}:medium`,
-              new TimestampRange(
-                oldSamplesStart + currentTime,
-                oldSamplesStart + nextTime
-              ),
-              1,
-              new Aggregation("avg", convertTimeUnitToMS("h"))
-            )
-            .catch((err) => {})) as Sample[])?.[0];
+          const prevSample = (
+            (await redisTSClient
+              .range(
+                `${key}:medium`,
+                new TimestampRange(
+                  oldSamplesStart + currentTime,
+                  oldSamplesStart + nextTime
+                ),
+                1,
+                new Aggregation("avg", convertTimeUnitToMS("h"))
+              )
+              .catch((err) => {})) as Sample[]
+          )?.[0];
           if (prevSample) {
             prevValues.push(prevSample as Sample);
             prevSampleVarianceSquare += Math.pow(
@@ -432,17 +447,19 @@ const analyze = async (metric: string, component: string) => {
           }
         }
       }
-      const adaptiveSigmaSample = ((await redisTSClient
-        .range(
-          `${key}:adaptive-sigma`,
-          new TimestampRange(currentHour, nextHour),
-          1
-        )
-        .catch((err) => {
-          console.log(
-            `An error occured while trying to add adaptive sigma : ${err}`
-          );
-        })) as Sample[])?.[0];
+      const adaptiveSigmaSample = (
+        (await redisTSClient
+          .range(
+            `${key}:adaptive-sigma`,
+            new TimestampRange(currentHour, nextHour),
+            1
+          )
+          .catch((err) => {
+            console.log(
+              `An error occured while trying to add adaptive sigma : ${err}`
+            );
+          })) as Sample[]
+      )?.[0];
       let adaptiveSigma: number = 0;
       if (adaptiveSigmaSample) adaptiveSigma = adaptiveSigmaSample.getValue();
       let currentSum = Math.pow(adaptiveSigma, 2) * numOfOldSamples;
@@ -479,16 +496,13 @@ const analyze = async (metric: string, component: string) => {
       });
 
       //Set the range values in redis
-      generalRedisClient.set(
+      redisClient.set(
         "mem-usage:used:adaptive-average:from-date",
         numOfTotalSumples > 12
           ? newSamplesEnd - 12 * convertTimeUnitToMS("W")
           : oldSamplesStart
       );
-      generalRedisClient.set(
-        "mem-usage:used:adaptive-average:to-date",
-        newSamplesEnd
-      );
+      redisClient.set("mem-usage:used:adaptive-average:to-date", newSamplesEnd);
     }
   }
 };

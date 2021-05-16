@@ -49,7 +49,8 @@
     "sqlite": "^4.0.21",
     "graphql-upload": "^11.0.0",
     "cron": "^1.8.2",
-    "apollo-datasource": "0.9.0"
+    "apollo-datasource": "0.9.0",
+    "toml": "^3.0.0"
   },
   "eslintConfig": {
     "extends": [

@@ -1,0 +1,116 @@
+# This section configures which metrics to track, it allows you to enable and disable storing measurements, retrieving stored measurements, 
+# subscribing and retrieving component related data to these different metrics
+
+
+[Tracking]
+
+# A list of all the tracked metrics
+# To disable the tracking of any of them just remove the metric from the list
+# eg. to enable tracking of Disk and Memory while disabling it for anything else, the list would be:-
+#   tracked-metrics = [
+#         "Memory",
+#       "Disk",
+#   ]
+tracked-metrics = [
+    "CPU",
+    "Memory",
+    "Disk",
+    "System",
+    "Docker"
+]
+
+# The time interval between publishing metric's data
+# Unit is ms
+publish-subscription-data-every = 2000
+
+# The time interval between taking samples of metric's data to then store it, decreasing the time between samples doesn't necessarily increase
+# the number of samples stored due to the values being aggregated for fixed time buckets
+# Unit is ms 
+sample-data-every = 10000
+
+
+# This section allows you to control the alerting subsystem
+[Alerts]
+
+# Enables the alerting subsystem, if this flag is set to false, no alert reporting or checking would be performed by the system
+enable-alerts = true
+# Enables the use of dynamic alerts, which uses a model of the system to determine if a certain value is an anomaly, if this option is disabled and
+# the scheduler is set to run at a certain time by setting the run-on parameters, the adaptive analysis task is disabled
+# The enable-alerts value has to be set to true for this to take effect 
+enable-dynamic-alerts = true
+
+# The notifcation API secret key
+push-notification-API-key = "918DF36F5275AA6EDCE6F35362EA0740871A9393EF73D80B1741CC3935B2A4E8"
+
+# Notification API instance ID
+push-notification-instance-ID = "6aab17a9-3a0a-471b-93b9-6d087c58d1fe"
+
+push-notification-domain = "localhost:3006"
+# The time interval between checks performed by the system to check if the metric's data requires an alert triggering, the value picked is the average
+# of the values in the last n milliseconds, where n is the value specified below
+# Unit is in ms
+# The enable-alerts value has to be set to true for this to take effect 
+check-alert-every = 60000
+
+# This section allows you to control the command chain subsystem
+[Command_Chains]
+
+# Enables the command chain subsystem, if this flag is set to false, no chain would be stored or executed
+enable-chains = true
+
+# Enables the option of running certain scripts under SUDO privilege
+# The enable-chains value has to be set to true for this to take effect 
+enable-chains-sudo-execution = true
+
+# Where to store the scripts, if the system isn't running under SUDO, the specified directory should have read, write and execute 
+# permission for the woof user
+scripts-dir = "./scripts"
+
+# API key for the one time password used in running SUDO and protected chains
+one-time-password-API-key = ""
+
+
+# This sections is used to enable the tracking of sites implemented via Nginx, it also specifies some parameters used to 
+# analyze and find data related to the site
+[Nginx]
+
+# Allow the tracking of Nginx web-service specific data
+track-nginx = true
+
+# The configuration file of the tracked site
+site-location = "/etc/nginx/sites-available/sombrero_project"
+
+# The location of the GeoIP database used to analyze the demographic of the site's traffic, if the value was set to null, 
+# the demographic analysis would be disabled
+GeoIP-database-location = "./src/Nginx/GeoLite2-Country_20210309/GeoLite2-Country.mmdb"
+
+
+# The schedular runs tasks such as parsing Nginx logs and finding the optimal restart time and the optimal schedular task runtime 
+[Scheduler]
+
+# The schedular runs the analysis tasks on the times that tend to have low CPU usage, to make these tasks run at a certain time of 
+# a certain day, set the run-on-time and run-on-day
+
+# The day to run these tasks, days are mapped to numbers with Sunday being 0 and Saturday being 6
+# run-on-day = 5
+
+# The time of the day to run these tasks
+# run-on-time = "00:00:00.000000"
+
+# Allow the user to perform a system restart
+allow-restart = true
+
+# This section is to define Redis parameters 
+[Redis]
+
+# Redis IP address
+redis-IP = "127.0.0.1"
+
+# Redis port number
+redis-port = 6379
+
+
+
+
+
+

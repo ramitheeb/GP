@@ -1,9 +1,8 @@
 import { createPublicKey, createVerify, randomBytes } from "crypto";
-import { generalRedisClient } from "../pubsub";
-import { AuthInfoRequest } from "./modules";
 import { open } from "sqlite";
 import * as sqlite3 from "sqlite3";
 import { readFileSync } from "fs";
+import { AuthInfoRequest } from ".";
 export const authHandlers: Map<
   string,
   ((reponses, session) => Promise<boolean | AuthInfoRequest>)[]

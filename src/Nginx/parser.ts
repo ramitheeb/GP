@@ -1,9 +1,7 @@
 import { promises as fsp, createReadStream, readFileSync } from "fs";
 import * as rl from "readline";
 import * as process from "process";
-import { redisWriteTSData } from "../Redis/redis_client";
-import { generalRedisClient } from "../pubsub";
-import { analyzeMetrics } from "../Alerts/dynamicAlerts";
+import { generalRedisClient, redisWriteTSData } from "../Redis";
 
 const timeRegex = /(?<=\s)\[.+\]/;
 const addressRegex = /^\d{1,3}\.\d{1,3}.\d{1,3}.\d{1,3}/;
