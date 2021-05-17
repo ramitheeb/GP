@@ -5,6 +5,7 @@ import { Alert, AlertChecker, getDayAndHour } from ".";
 import { getAlertCheckRate, getAlertsEnabled, getIP } from "../Configuration";
 import { redisTSClient } from "../Redis";
 import { convertTimeUnitToMS } from "../Utils";
+import { addNotification } from "../Notifications";
 const alerts: Map<string, AlertChecker> = new Map<string, AlertChecker>();
 const alertInterval = getAlertCheckRate();
 
@@ -18,8 +19,7 @@ export const setUpAlerts = () => {
     }
 
     if (rows) {
-      rows.forEach((value) => addAlert(value));
-      // console.log(rows);
+      rows.forEach((value) => addAlert({ ...value, fired: false }));
     }
     db.close();
   });
@@ -50,7 +50,6 @@ export const updateAlert = (updatedAlert: Alert) => {
     if (currentAlert.id === updatedAlert.id) {
       alertList.splice(i, 1);
       alertList.push(updatedAlert);
-
       return;
     }
   }
@@ -84,15 +83,40 @@ const alertCheck = async (key: string, alert: Alert) => {
 
       if (alert.type === "s") {
         if (
+          !alert.fired &&
           currentComponent.getValue() < alert.end &&
           currentComponent.getValue() > alert.start
         ) {
           //Notify
-          console.log(`Alert ${alert.AlertName} fired`);
+          console.log(`Alert ${alert.AlertName} fired (enter)`);
+          alert.fired = true;
           NotifyAll({
-            body: `${alert.metric}'s ${alert.component} has exceeded ${alert.rangeName} and ${alert.AlertName} was fired`,
+            body: `${alert.AlertName} : ${alert.metric}'s ${alert.component} has entered ${alert.rangeName}`,
             title: alert.AlertName,
             deep_link: `http://${getIP()}:3006/`,
+          });
+          addNotification({
+            name: alert.AlertName,
+            body: `${alert.AlertName} : ${alert.metric}'s ${alert.component} has entered ${alert.rangeName}`,
+            url: `http://${getIP()}:3006/`,
+          });
+        } else if (
+          alert.fired &&
+          (currentComponent.getValue() > alert.end ||
+            currentComponent.getValue() < alert.start)
+        ) {
+          //Notify
+          console.log(`Alert ${alert.AlertName} fired (exit)`);
+          alert.fired = false;
+          NotifyAll({
+            body: `${alert.AlertName} : ${alert.metric}'s ${alert.component} has exited ${alert.rangeName}`,
+            title: alert.AlertName,
+            deep_link: `http://${getIP()}:3006/`,
+          });
+          addNotification({
+            name: alert.AlertName,
+            body: `${alert.AlertName} : ${alert.metric}'s ${alert.component} has exited ${alert.rangeName}`,
+            url: `http://${getIP()}:3006/`,
           });
         }
       } else if (alert.type === "d") {
@@ -126,20 +150,52 @@ const alertCheck = async (key: string, alert: Alert) => {
         const sigma = adaptiveSigmaSamples[0];
 
         if (
-          currentComponent.getValue() >
+          !alert.fired &&
+          (currentComponent.getValue() >
             average.getValue() + 3 * sigma.getValue() ||
+            currentComponent.getValue() <
+              average.getValue() - 3 * sigma.getValue())
+        ) {
+          alert.contineuosTriggerCount++;
+          if (alert.contineuosTriggerCount === 4) {
+            //Notify
+            console.log(`Alert ${alert.AlertName} fired (enter)`);
+            alert.fired = true;
+            NotifyAll({
+              body: `${alert.AlertName} : is out of its usual value`,
+              title: alert.AlertName,
+              deep_link: `http://${getIP()}:3006/`,
+            });
+            addNotification({
+              name: alert.AlertName,
+              body: `${alert.AlertName} : is out of its usual value`,
+              url: `http://${getIP()}:3006/`,
+            });
+            alert.contineuosTriggerCount = 0;
+          }
+        } else if (
+          alert.fired &&
           currentComponent.getValue() <
+            average.getValue() + 3 * sigma.getValue() &&
+          currentComponent.getValue() >
             average.getValue() - 3 * sigma.getValue()
         ) {
           alert.contineuosTriggerCount++;
           if (alert.contineuosTriggerCount === 4) {
             //Notify
-            // console.log(`Alert ${alert.AlertName} fired`);
-            // NotifyAll({
-            //   body: `${alert.metric}'s ${alert.component} has exceeded ${alert.rangeName} and ${alert.AlertName} was fired`,
-            //   title: alert.AlertName,
-            //   deep_link: `http://${getIP()}:3006/`,
-            // });
+            console.log(`Alert ${alert.AlertName} fired (exited)`);
+            alert.fired = false;
+            NotifyAll({
+              body: `${alert.AlertName} : is back to its usual value`,
+              title: alert.AlertName,
+              deep_link: `http://${getIP()}:3006/`,
+            });
+            addNotification({
+              name: alert.AlertName,
+              body: `${alert.AlertName} : is back to its usual value`,
+              url: `http://${getIP()}:3006/`,
+            });
+            alert.contineuosTriggerCount = 0;
           }
         } else {
           alert.contineuosTriggerCount = 0;

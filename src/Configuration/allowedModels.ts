@@ -4,6 +4,7 @@ import {
   trackedModels,
   SystemRuntime,
   Traffic,
+  NotifcationModel,
 } from "../Models";
 import { parseConfig } from "./parseConfig";
 
@@ -23,7 +24,7 @@ export const getAllowedModels = () => {
     if (conf?.Nginx["track-nginx"])
       allowedModels["CommandChains"] = CommandChains;
   allowedModels["Traffic"] = Traffic;
+  allowedModels["Notifications"] = NotifcationModel;
 };
-console.log("hi");
 
 getAllowedModels();

@@ -165,6 +165,10 @@ const resolvers: IResolvers = {
       if (!context.req.username) return;
       return context.models.Docker?.getContainerStatus(args.id);
     },
+    Notifications: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.Notifications?.getNotifications();
+    },
   },
   Mutation: {
     async authenticationRequest(
@@ -247,10 +251,13 @@ const resolvers: IResolvers = {
         context.req
       );
     },
-
     async deleteCommandChains(_, { id }, context) {
       if (!context.req.username) return;
       return context.models.CommandChains?.deleteCommandChain({ id });
+    },
+    async deleteNotification(_, { id }, context) {
+      if (!context.req.username) return;
+      return context.models.Notifications?.deletNotification({ id });
     },
   },
 };

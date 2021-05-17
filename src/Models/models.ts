@@ -429,6 +429,8 @@ export const Alerts = {
     component,
     type,
   }) => {
+    console.log("saving alert");
+
     try {
       const db = new sqlite3.Database("./database.db");
       if (id === -1) {
@@ -446,6 +448,7 @@ export const Alerts = {
               rangeName: rangeName,
               type: type,
               contineuosTriggerCount: 0,
+              fired: false,
             });
           }
         );
@@ -476,12 +479,51 @@ export const Alerts = {
           metric: metric,
           component: component,
           contineuosTriggerCount: 0,
+          fired: false,
         });
       }
       db.close();
     } catch (e) {
       return false;
     }
+    return true;
+  },
+};
+
+export const NotifcationModel = {
+  getNotifications: async () => {
+    console.log("here");
+
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database("./database.db");
+      const response: any = [];
+
+      db.each(
+        "SELECT * FROM Notifications;",
+        function (err, row) {
+          if (err) reject(err);
+          else response.push(row);
+        },
+        (err, n) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(response);
+          }
+        }
+      );
+    });
+  },
+
+  deletNotification: async ({ id }) => {
+    const db = await open({
+      filename: "./database.db",
+      driver: sqlite3.Database,
+    });
+    const chainRow = await db.run("DELETE FROM Notifications where id = ?", [
+      id,
+    ]);
+    if (!chainRow) return false;
     return true;
   },
 };

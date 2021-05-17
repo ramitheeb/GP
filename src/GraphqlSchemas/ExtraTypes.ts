@@ -14,3 +14,12 @@ export const FileType = gql`
     encoding: String!
   }
 `;
+
+export const NotificationType = gql`
+  type Notification {
+    id: Float!
+    name: String
+    body: String
+    url: String
+  }
+`;

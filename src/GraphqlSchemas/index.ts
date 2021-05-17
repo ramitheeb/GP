@@ -4,7 +4,7 @@ import SystemInformationTypes from "./SystemInformationTypes";
 import { DemographicGeoStatisticsHistoryData } from "./DemographicHistoryData";
 import { EndpointStatisticsHistoryData } from "./EndpointStatisticsHistory";
 import TrafficHistoryData from "./TrafficHistoryData";
-import { CommandChainOutput } from "./ExtraTypes";
+import { CommandChainOutput, NotificationType } from "./ExtraTypes";
 import {
   AuthenticationInfoRequest,
   AuthenticationRequestResponse,
@@ -58,6 +58,7 @@ const typeDefs = [
         option: String!
       ): TrafficHistoryData
 
+      Notifications: [Notification]
       EndpointStatisticsHistory: EndpointStatisticsHistoryData
       DemographicGeoStatisticsHistory: DemoGraphicGeoStatisticsHistoryData
     }
@@ -102,6 +103,7 @@ const typeDefs = [
       ): CommandChainOutput
       fireProtectedCommandChain(password: String!): CommandChainOutput
       deleteCommandChains(id: Float!): Boolean
+      deleteNotification(id: Float!): Boolean
     }
 
     type Subscription {
@@ -123,6 +125,7 @@ const typeDefs = [
   CommandChainOutput,
   AuthenticationInfoRequest,
   AuthenticationRequestResponse,
+  NotificationType,
 ];
 
 export default typeDefs;

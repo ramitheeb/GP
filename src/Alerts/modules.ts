@@ -9,6 +9,7 @@ export interface Alert {
   rangeName: string;
   AlertName: string;
   contineuosTriggerCount: number;
+  fired: boolean;
 }
 export interface AlertChecker {
   timerID: NodeJS.Timeout;
