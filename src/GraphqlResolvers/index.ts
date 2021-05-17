@@ -35,6 +35,12 @@ const resolvers: IResolvers = {
         return context.models.Disk?.subscribeToDiskIO();
       },
     },
+    Network: {
+      subscribe: (_, __, context) => {
+        // if (!context.req.username) return;
+        return context.models.Network?.subscribeToNetwork();
+      },
+    },
     ProcessesData: {
       subscribe: (_, __, context) => {
         // if (!context.req.username) return;
@@ -96,6 +102,20 @@ const resolvers: IResolvers = {
     DiskHistory: (_, args, context) => {
       if (!context.req.username) return;
       return context.models.Disk?.getDiskHistory(
+        args.option,
+        args.toDate,
+        args.fromDate
+      );
+    },
+    NetworkData: (_, __, context) => {
+      if (!context.req.username) return;
+      console.log("here");
+
+      return context.models.Network?.getNetworkData();
+    },
+    NetworkHistory: (_, args, context) => {
+      if (!context.req.username) return;
+      return context.models.Network?.getNetworkHistory(
         args.option,
         args.toDate,
         args.fromDate

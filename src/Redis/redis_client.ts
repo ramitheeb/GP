@@ -9,6 +9,7 @@ export const MEMORY_TS_KEY = "mem-usage";
 export const DISK_TS_KEY = "disk-usage";
 export const CPU_LOAD_TS_KEY = "cpu-usage";
 export const TRAFFIC_TS_KEY = "traffic";
+export const NETWORK_TS_KEY = "network-bandwidth";
 export const MEASURED_METRICS: string[] = [
   "cpu-usage",
   "mem-usage",
@@ -54,6 +55,12 @@ export const redisWriteTSData = (
   data: number,
   date: number
 ) => {
+  if (!data) {
+    return new Promise((resolve, reject) => {
+      reject();
+    });
+  }
+
   // console.log(`${metric} ${component} ${period} ${data} ${date}`);
 
   const sample = new Sample(`${metric}:${component}:${period}`, data, date);

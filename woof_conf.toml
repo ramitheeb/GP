@@ -16,7 +16,8 @@ tracked-metrics = [
     "Memory",
     "Disk",
     "System",
-    "Docker"
+    "Docker",
+    "Network"
 ]
 
 # The time interval between publishing metric's data
@@ -33,7 +34,7 @@ sample-data-every = 10000
 [Alerts]
 
 # Enables the alerting subsystem, if this flag is set to false, no alert reporting or checking would be performed by the system
-enable-alerts = true
+enable-alerts = false
 # Enables the use of dynamic alerts, which uses a model of the system to determine if a certain value is an anomaly, if this option is disabled and
 # the scheduler is set to run at a certain time by setting the run-on parameters, the adaptive analysis task is disabled
 # The enable-alerts value has to be set to true for this to take effect 

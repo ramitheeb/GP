@@ -25,6 +25,7 @@ const typeDefs = [
       CurrentLoad: CurrentLoadData
       OsInfo: OsData
       DiskData: DisksIoData
+      NetworkData: NetworkStatsData
       ProcessesData: ProcessesData
       Alerts: [Alert]
       CommandChains: [CommandChain]
@@ -57,7 +58,11 @@ const typeDefs = [
         fromDate: Float
         option: String!
       ): TrafficHistoryData
-
+      NetworkHistory(
+        toDate: Float
+        fromDate: Float
+        option: String!
+      ): NetworkHistoryData
       Notifications: [Notification]
       EndpointStatisticsHistory: EndpointStatisticsHistoryData
       DemographicGeoStatisticsHistory: DemoGraphicGeoStatisticsHistoryData
@@ -112,6 +117,7 @@ const typeDefs = [
       CpuData: CpuData
       CurrentLoad: CurrentLoadData
       DiskData: DisksIoData
+      Network: NetworkStatsData
       ProcessesData: ProcessesData
       containerStatus(id: String!): DockerContainerStatsData
     }

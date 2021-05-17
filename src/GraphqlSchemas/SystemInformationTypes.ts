@@ -403,6 +403,7 @@ const allTypes = gql`
     rx_sec: Float
     tx_sec: Float
     ms: Float
+    timestamp: Float
   }
 
   type NetworkConnectionsData {

@@ -63,6 +63,34 @@ const sendDataToDiskTS = async (
   console.log(`Finished adding at ${readKey} and ${writeKey}`);
 };
 
+const sendDataToNetworkTS = async (
+  client: RedisTimeSeries,
+  downloadKey: string,
+  uploadKey: string
+) => {
+  for (let i = 0; i < 365; i++) {
+    let downloadSamples: Sample[] = [];
+    let uploadSamples: Sample[] = [];
+
+    for (let j = 0; j < sampleRatePerDay; j++) {
+      const downloadValue = Math.floor(Math.random() * 2840);
+      const uploadValue = Math.floor(Math.random() * 2840);
+      const timestamp =
+        1588980588000 + 86400000 * i + Math.floor(Math.random() * 86400000);
+
+      const downloadSample = new Sample(downloadKey, downloadValue, timestamp);
+      const uploadSample = new Sample(uploadKey, uploadValue, timestamp);
+
+      downloadSamples.push(downloadSample);
+      uploadSamples.push(uploadSample);
+    }
+    await client.multiAdd(downloadSamples);
+    await client.multiAdd(uploadSamples);
+  }
+
+  console.log(`Finished adding at ${downloadKey} and ${uploadKey}`);
+};
+
 const sendDataToTraffiTS = async (client: RedisTimeSeries, key: string) => {
   const sampleRatePerDay = 144;
   for (let i = 0; i < 365; i++) {
@@ -97,13 +125,18 @@ const sendDataToTraffiTS = async (client: RedisTimeSeries, key: string) => {
 const sendForAll = async () => {
   const factory = new RedisTimeSeriesFactory();
   const client = factory.create();
-  sendData(client, "cpu-usage:current-load:runtime");
-  sendData(client, "mem-usage:used:runtime");
-  sendDataToDiskTS(
+  // sendData(client, "cpu-usage:current-load:runtime");
+  // sendData(client, "mem-usage:used:runtime");
+  // sendDataToDiskTS(
+  //   client,
+  //   "disk-usage:read:runtime",
+  //   "disk-usage:write:runtime"
+  // );
+  sendDataToNetworkTS(
     client,
-    "disk-usage:read:runtime",
-    "disk-usage:write:runtime"
+    "network-bandwidth:download:runtime",
+    "network-bandwidth:upload:runtime"
   );
-  sendDataToTraffiTS(client, "traffic:all:runtime");
+  // sendDataToTraffiTS(client, "traffic:all:runtime");
 };
 sendForAll();

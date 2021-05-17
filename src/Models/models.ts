@@ -29,6 +29,7 @@ import {
   mediumTimeSeriesPeriod,
   MEMORY_TS_KEY,
   monthQueryLength,
+  NETWORK_TS_KEY,
   pubsub,
   redisReadTSData,
   shortTimeSeriesPeriod,
@@ -265,6 +266,99 @@ export const Disk = {
   },
 };
 trackedModels.set("Disk", Disk);
+
+export const Network = {
+  getNetworkData: async () => {
+    console.log("also here");
+
+    const data = (await si.networkStats())[0];
+
+    data["timestamp"] = new Date().getTime();
+    return data;
+  },
+
+  subscribeToNetwork: () => pubsub.asyncIterator("NETWORK_DATA"),
+
+  getNetworkHistory: async (
+    option: string,
+    toDate: number,
+    fromDate: number
+  ) => {
+    let resolution: number = 150;
+    let startDate: number = 0;
+    let endDate: number = 0;
+    let period: string;
+
+    switch (option) {
+      case "Day":
+        endDate = new Date().getTime();
+        startDate = endDate - dayQueryLength;
+        break;
+      case "Week":
+        endDate = new Date().getTime();
+        startDate = endDate - weekQueryLength;
+        break;
+      case "Month":
+        endDate = new Date().getTime();
+        startDate = endDate - monthQueryLength;
+        break;
+      case "Year":
+        endDate = new Date().getTime();
+        startDate = endDate - yearQueryLength;
+        break;
+      case "Custom":
+        endDate = toDate;
+        startDate = fromDate;
+        break;
+      default:
+        return;
+    }
+
+    if (endDate - startDate < shortTimeSeriesPeriod) period = "short";
+    else if (endDate - startDate < mediumTimeSeriesPeriod) period = "medium";
+    else if (endDate - startDate < longTimeSeriesPeriod) period = "long";
+    else return;
+
+    const downloadSamples = await redisReadTSData(
+      NETWORK_TS_KEY,
+      "download",
+      period,
+      startDate,
+      endDate,
+      resolution
+    );
+
+    const uploadSamples = await redisReadTSData(
+      NETWORK_TS_KEY,
+      "upload",
+      period,
+      startDate,
+      endDate,
+      resolution
+    );
+
+    const data = downloadSamples.map((downloadElement, index) => {
+      const rx_sec = downloadElement.getValue();
+      const tx_sec =
+        index < uploadSamples.length - 1
+          ? uploadSamples[index].getValue()
+          : null;
+      return {
+        rx_sec: rx_sec,
+        tx_sec: tx_sec,
+        timestamp: downloadElement.getTimestamp(),
+      };
+    });
+
+    return {
+      fromDate: startDate,
+      toDate: endDate,
+      data: data,
+    };
+  },
+};
+
+trackedModels.set("Network", Network);
 
 export const Traffic = {
   getTrafficHistory: async (

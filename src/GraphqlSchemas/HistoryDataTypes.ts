@@ -17,6 +17,12 @@ const HistoryDataTypes = gql`
     toDate: Float
     data: [MemData]
   }
+
+  type NetworkHistoryData {
+    fromDate: Float
+    toDate: Float
+    data: [NetworkStatsData]
+  }
 `;
 
 export default HistoryDataTypes;
