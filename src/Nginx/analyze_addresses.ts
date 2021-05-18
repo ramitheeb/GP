@@ -6,7 +6,7 @@ export const findDemographic = async () => {
   let addresses: string[] | void = [];
   try {
     reader = await Reader.open(
-      "./src/Nginx/GeoLite2-Country_20210309/GeoLite2-Country.mmdb"
+      "./GeoLite2-Country_20210309/GeoLite2-Country.mmdb"
     );
   } catch (e) {
     console.log(`An error occured while opening the GeoIP DB : ${e}`);
@@ -45,3 +45,4 @@ export const findDemographic = async () => {
 
   await redisCilent.del("addresses");
 };
+findDemographic();

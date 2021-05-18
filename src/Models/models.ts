@@ -605,11 +605,8 @@ export const CommandChains = {
         let dataToBeWritten: string = "";
         if (file) {
           if (file) {
-            const {
-              filename,
-              mimetype,
-              createReadStream,
-            } = (await file) as FileUpload;
+            const { filename, mimetype, createReadStream } =
+              (await file) as FileUpload;
 
             actualLocation = `scripts/${filename}.sh`;
             const inStream = createReadStream();

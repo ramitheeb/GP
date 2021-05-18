@@ -26,7 +26,7 @@ const createForAll = async () => {
   const periods = ["runtime", "short", "medium", "long"];
   // 10 mins - 1 month - 6 months - 4 years
   const retentions = [157700000000, 2628000000, 15770000000, 126100000000];
-  for (let i = 0; i < metrics.length; i++) {
+  for (let i = 4; i < metrics.length; i++) {
     const metric = metrics[i];
     const component = components[i];
     for (let j = 0; j < periods.length; j++) {
