@@ -1,6 +1,6 @@
 import { Sample } from "redis-time-series-ts";
-import { convertTimeUnitToMS } from "../Utils/round_up_time";
-import { redisTSClient } from "./redis_client";
+import { redisTSClient } from ".";
+import { convertTimeUnitToMS } from "../Utils";
 
 const sendDataToAdaptiveTS = async () => {
   for (let i = 0; i < 2016; i++) {

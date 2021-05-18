@@ -4,7 +4,11 @@ import SystemInformationTypes from "./SystemInformationTypes";
 import { DemographicGeoStatisticsHistoryData } from "./DemographicHistoryData";
 import { EndpointStatisticsHistoryData } from "./EndpointStatisticsHistory";
 import TrafficHistoryData from "./TrafficHistoryData";
-import { CommandChainOutput } from "./ExtraTypes";
+import { CommandChainOutput, NotificationType } from "./ExtraTypes";
+import {
+  AuthenticationInfoRequest,
+  AuthenticationRequestResponse,
+} from "./GenericAuthSSHTypes";
 
 const typeDefs = [
   gql`
@@ -21,6 +25,7 @@ const typeDefs = [
       CurrentLoad: CurrentLoadData
       OsInfo: OsData
       DiskData: DisksIoData
+      NetworkData: NetworkStatsData
       ProcessesData: ProcessesData
       Alerts: [Alert]
       CommandChains: [CommandChain]
@@ -53,13 +58,29 @@ const typeDefs = [
         fromDate: Float
         option: String!
       ): TrafficHistoryData
-
+      NetworkHistory(
+        toDate: Float
+        fromDate: Float
+        option: String!
+      ): NetworkHistoryData
+      Notifications: [Notification]
       EndpointStatisticsHistory: EndpointStatisticsHistoryData
       DemographicGeoStatisticsHistory: DemoGraphicGeoStatisticsHistoryData
     }
 
     type Mutation {
-      login(username: String!, password: String!): User
+      authenticationRequest(
+        username: String!
+        serviceName: String!
+        submethods: String
+      ): AuthenticationRequestResponse
+
+      authenticationInfoResponse(
+        numOfResponses: Int!
+        responses: [String]!
+      ): AuthenticationRequestResponse
+
+      addPublickKeyUser(username: String!, publickKey: String): Boolean
       alert(
         start: Float
         end: Float
@@ -79,9 +100,16 @@ const typeDefs = [
         args: [String]
         file: GraphQLUpload
         argsChanged: Boolean
+        passwordProtected: Boolean
       ): Boolean
-      fireCommandChain(id: Float!, args: [String]): CommandChainOutput
+      fireCommandChain(
+        id: Float!
+        args: [String]
+        runWithSUDO: Boolean
+      ): CommandChainOutput
+      fireProtectedCommandChain(password: String!): CommandChainOutput
       deleteCommandChains(id: Float!): Boolean
+      deleteNotification(id: Float!): Boolean
     }
 
     type Subscription {
@@ -90,6 +118,7 @@ const typeDefs = [
       CpuData: CpuData
       CurrentLoad: CurrentLoadData
       DiskData: DisksIoData
+      Network: NetworkStatsData
       ProcessesData: ProcessesData
       containerStatus(id: String!): DockerContainerStatsData
     }
@@ -101,6 +130,9 @@ const typeDefs = [
   EndpointStatisticsHistoryData,
   DemographicGeoStatisticsHistoryData,
   CommandChainOutput,
+  AuthenticationInfoRequest,
+  AuthenticationRequestResponse,
+  NotificationType,
 ];
 
 export default typeDefs;

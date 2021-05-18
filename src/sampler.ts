@@ -1,34 +1,38 @@
 import * as systemInformation from "systeminformation";
-import { pubsub } from "./pubsub";
+
+import * as Redis from "ioredis";
+import { getSampleRate, getSubscriptionRate } from "./Configuration";
 import {
   CPU_LOAD_TS_KEY,
   DISK_TS_KEY,
+  generateRedisClient,
   MEMORY_TS_KEY,
+  NETWORK_TS_KEY,
+  pubsub,
   redisWriteTSData,
-} from "./Redis/redis_client";
-import * as Redis from "ioredis";
+} from "./Redis";
+
 let historicRuntimeSamplerTimerId;
 let nonHistoricRuntimeSamplerTimerId;
 let histiorySamplerTimerId;
 
-const historicRuntimeSampleFrequency = 2000;
-const nonHistoricRuntimeSampleFrequency = 1000;
-const historySampleFrequency = 1000;
+const historicRuntimeSampleFrequency = getSubscriptionRate();
+const nonHistoricRuntimeSampleFrequency = getSubscriptionRate();
+const historySampleFrequency = getSampleRate();
 
 const MEM_SUBSCRIPTION_NAME = "NEW_MEM";
 const DISK_SUBSCRIPTION_NAME = "DISK_DATA";
 const TIME_SUBSCRIPTION_NAME = "TIME_DATA";
 const CPU_LOAD_SUBSCRIPTION_NAME = "CURRENT_CPU_LOAD";
+const NETWORK_BANDWIDTH_SUBSCRIPTION_NAME = "NETWORK_DATA";
 const PROCESS_DATA_SUBSCRIPTION_NAME = "PROCESSES_DATA";
 const CONTAINER_STATUS_SUBSCRIPTION_NAME = "CONTAINER_STATUS";
 
-const redisSubscriptionCheckClient = new Redis();
+const redisSubscriptionCheckClient = generateRedisClient();
 
 const historicRuntimeSample = async () => {
-  const subscriptionsList: String[] = await redisSubscriptionCheckClient.send_command(
-    "PUBSUB",
-    ["CHANNELS"]
-  );
+  const subscriptionsList: String[] =
+    await redisSubscriptionCheckClient.send_command("PUBSUB", ["CHANNELS"]);
 
   systemInformation.mem().then((data) => {
     const timestamp = new Date().getTime();
@@ -38,7 +42,15 @@ const historicRuntimeSample = async () => {
         MemData: data,
       });
     }
-    redisWriteTSData(MEMORY_TS_KEY, "used", "runtime", data.used, timestamp);
+    redisWriteTSData(
+      MEMORY_TS_KEY,
+      "used",
+      "runtime",
+      data.used,
+      timestamp
+    ).catch((err) => {
+      console.log(`An error occured while sampling : ${err}`);
+    });
   });
 
   systemInformation.disksIO().then((data) => {
@@ -49,10 +61,53 @@ const historicRuntimeSample = async () => {
         DiskData: data,
       });
     }
-    redisWriteTSData(DISK_TS_KEY, "read", "runtime", data.rIO, timestamp);
-    redisWriteTSData(DISK_TS_KEY, "write", "runtime", data.wIO, timestamp);
+    redisWriteTSData(DISK_TS_KEY, "read", "runtime", data.rIO, timestamp).catch(
+      (err) => {
+        console.log(`An error occured while sampling : ${err}`);
+      }
+    );
+    redisWriteTSData(
+      DISK_TS_KEY,
+      "write",
+      "runtime",
+      data.wIO,
+      timestamp
+    ).catch((err) => {
+      console.log(`An error occured while sampling : ${err}`);
+    });
   });
-
+  systemInformation.networkStats().then((dataList) => {
+    const data = dataList[0];
+    const timestamp = new Date().getTime();
+    data["timestamp"] = timestamp;
+    if (subscriptionsList.includes(NETWORK_BANDWIDTH_SUBSCRIPTION_NAME)) {
+      pubsub.publish(NETWORK_BANDWIDTH_SUBSCRIPTION_NAME, {
+        Network: data,
+      });
+    }
+    redisWriteTSData(
+      NETWORK_TS_KEY,
+      "download",
+      "runtime",
+      data.rx_sec,
+      timestamp
+    ).catch((err) => {
+      console.log(
+        `An error occured while trying to add network sample : ${err}`
+      );
+    });
+    redisWriteTSData(
+      DISK_TS_KEY,
+      "upload",
+      "runtime",
+      data.tx_sec,
+      timestamp
+    ).catch((err) => {
+      console.log(
+        `An error occured while trying to add network sample : ${err}`
+      );
+    });
+  });
   systemInformation.currentLoad().then((data) => {
     const timestamp = new Date().getTime();
     if (data.currentLoad === undefined) {
@@ -78,44 +133,83 @@ const historicRuntimeSample = async () => {
       "runtime",
       data.currentLoad,
       timestamp
-    ).catch((reason) => {
+    )?.catch((reason) => {
       //     console.log(`\x1b[31m error at redisWriteTSData : ${reason}`);
     });
   });
 };
 
 const historicNonRuntimeSample = async () => {
-  systemInformation.mem().then((data) => {
-    const timestamp = new Date().getTime();
-    data["timestamp"] = timestamp;
-    redisWriteTSData(MEMORY_TS_KEY, "used", "runtime", data.used, timestamp);
-  });
+  systemInformation
+    .mem()
+    .then((data) => {
+      const timestamp = new Date().getTime();
+      data["timestamp"] = timestamp;
+      redisWriteTSData(MEMORY_TS_KEY, "used", "runtime", data.used, timestamp);
+    })
+    .catch((err) => {
+      console.log(`An error occured while sampling : ${err}`);
+    });
 
   systemInformation.disksIO().then((data) => {
     const timestamp = new Date().getTime();
     data["timestamp"] = timestamp;
-    redisWriteTSData(DISK_TS_KEY, "read", "runtime", data.rIO, timestamp);
-    redisWriteTSData(DISK_TS_KEY, "write", "runtime", data.wIO, timestamp);
+    redisWriteTSData(DISK_TS_KEY, "read", "runtime", data.rIO, timestamp).catch(
+      (err) => {
+        console.log(`An error occured while sampling : ${err}`);
+      }
+    );
+    redisWriteTSData(
+      DISK_TS_KEY,
+      "write",
+      "runtime",
+      data.wIO,
+      timestamp
+    ).catch((err) => {
+      console.log(`An error occured while sampling : ${err}`);
+    });
   });
+  systemInformation.networkStats().then((dataList) => {
+    const data = dataList[0];
+    const timestamp = new Date().getTime();
+    data["timestamp"] = timestamp;
 
+    redisWriteTSData(
+      NETWORK_TS_KEY,
+      "download",
+      "runtime",
+      data.rx_sec,
+      timestamp
+    ).catch((err) => {
+      console.log(`An error occured while sampling : ${err}`);
+    });
+    redisWriteTSData(
+      DISK_TS_KEY,
+      "upload",
+      "runtime",
+      data.tx_sec,
+      timestamp
+    ).catch((err) => {
+      console.log(`An error occured while sampling : ${err}`);
+    });
+  });
   systemInformation.currentLoad().then((data) => {
     const timestamp = new Date().getTime();
     data["timestamp"] = timestamp;
+
     redisWriteTSData(
       CPU_LOAD_TS_KEY,
       "current-load",
       "runtime",
       data.currentLoad,
       timestamp
-    ).catch((reason) => {});
+    )?.catch((reason) => {});
   });
 };
 
 const nonHistoricRuntimeSample = async () => {
-  const subscriptionsList: String[] = await redisSubscriptionCheckClient.send_command(
-    "PUBSUB",
-    ["CHANNELS"]
-  );
+  const subscriptionsList: String[] =
+    await redisSubscriptionCheckClient.send_command("PUBSUB", ["CHANNELS"]);
 
   if (subscriptionsList.includes(TIME_SUBSCRIPTION_NAME)) {
     pubsub.publish(TIME_SUBSCRIPTION_NAME, { Time: systemInformation.time() });

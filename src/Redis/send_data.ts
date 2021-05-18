@@ -11,7 +11,7 @@ const sendData = async (client: RedisTimeSeries, key: string) => {
       const sample = new Sample(
         key,
         Math.floor(Math.random() * 48000 + 2000),
-        1588291200000 + 86400000 * i + Math.floor(Math.random() * 86400000)
+        1589760000000 + 86400000 * i + Math.floor(Math.random() * 86400000)
       );
       samples.push(sample);
     }
@@ -48,7 +48,7 @@ const sendDataToDiskTS = async (
       const readValue = Math.floor(Math.random() * 2840);
       const writeValue = Math.floor(Math.random() * 2840);
       const timestamp =
-        1588291200000 + 86400000 * i + Math.floor(Math.random() * 86400000);
+        1589760000000 + 86400000 * i + Math.floor(Math.random() * 86400000);
 
       const readSample = new Sample(readKey, readValue, timestamp);
       const writeSample = new Sample(writeKey, writeValue, timestamp);
@@ -63,6 +63,34 @@ const sendDataToDiskTS = async (
   console.log(`Finished adding at ${readKey} and ${writeKey}`);
 };
 
+const sendDataToNetworkTS = async (
+  client: RedisTimeSeries,
+  downloadKey: string,
+  uploadKey: string
+) => {
+  for (let i = 0; i < 365; i++) {
+    let downloadSamples: Sample[] = [];
+    let uploadSamples: Sample[] = [];
+
+    for (let j = 0; j < sampleRatePerDay; j++) {
+      const downloadValue = Math.floor(Math.random() * 2840);
+      const uploadValue = Math.floor(Math.random() * 2840);
+      const timestamp =
+        1589760000000 + 86400000 * i + Math.floor(Math.random() * 86400000);
+
+      const downloadSample = new Sample(downloadKey, downloadValue, timestamp);
+      const uploadSample = new Sample(uploadKey, uploadValue, timestamp);
+
+      downloadSamples.push(downloadSample);
+      uploadSamples.push(uploadSample);
+    }
+    await client.multiAdd(downloadSamples);
+    await client.multiAdd(uploadSamples);
+  }
+
+  console.log(`Finished adding at ${downloadKey} and ${uploadKey}`);
+};
+
 const sendDataToTraffiTS = async (client: RedisTimeSeries, key: string) => {
   const sampleRatePerDay = 144;
   for (let i = 0; i < 365; i++) {
@@ -71,7 +99,7 @@ const sendDataToTraffiTS = async (client: RedisTimeSeries, key: string) => {
       const sample = new Sample(
         key,
         Math.floor(Math.random() * 6),
-        1588291200000 + 86400000 * i + Math.floor(Math.random() * 86400000)
+        1589760000000 + 86400000 * i + Math.floor(Math.random() * 86400000)
       );
       samples.push(sample);
     }
@@ -104,6 +132,11 @@ const sendForAll = async () => {
     "disk-usage:read:runtime",
     "disk-usage:write:runtime"
   );
-  sendDataToTraffiTS(client, "traffic:all:runtime");
+  sendDataToNetworkTS(
+    client,
+    "network-bandwidth:download:runtime",
+    "network-bandwidth:upload:runtime"
+  );
+  // sendDataToTraffiTS(client, "traffic:all:runtime");
 };
 sendForAll();

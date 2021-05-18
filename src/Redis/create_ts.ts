@@ -20,9 +20,19 @@ const createForAll = async () => {
     "mem-usage",
     "disk-usage",
     "disk-usage",
+    "network-bandwidth",
+    "network-bandwidth",
     "traffic",
   ];
-  const components = ["current-load", "used", "read", "write", "all"];
+  const components = [
+    "current-load",
+    "used",
+    "read",
+    "write",
+    "download",
+    "upload",
+    "all",
+  ];
   const periods = ["runtime", "short", "medium", "long"];
   // 10 mins - 1 month - 6 months - 4 years
   const retentions = [157700000000, 2628000000, 15770000000, 126100000000];

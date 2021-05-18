@@ -3,11 +3,12 @@ import {
   longTimeSeriesPeriod,
   mediumTimeSeriesPeriod,
   monthQueryLength,
+  redisReadTSData,
   shortTimeSeriesPeriod,
+  TRAFFIC_TS_KEY,
   weekQueryLength,
   yearQueryLength,
-} from "../Redis/periods";
-import { TRAFFIC_TS_KEY, redisReadTSData } from "../Redis/redis_client";
+} from "../Redis";
 
 const getTrafficHistoryData = async (_, args, context) => {
   if (!context.req.username) return;

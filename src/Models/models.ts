@@ -1,36 +1,43 @@
-import { DataSource } from "apollo-datasource";
-import { ExpressContext, withFilter } from "apollo-server-express";
+import { withFilter } from "apollo-server-express";
 import * as si from "systeminformation";
 import * as sqlite3 from "sqlite3";
 import { promises as ps } from "fs";
 import { open } from "sqlite";
-import { generalRedisClient, pubsub } from "../pubsub";
+
+import { readFileSync } from "fs";
+import { FileUpload } from "graphql-upload";
+
+import { addAlert, updateAlert } from "../Alerts";
+import { fireCMDChain } from "../Commands";
 import {
-  dayQueryLength,
-  longTimeSeriesPeriod,
-  mediumTimeSeriesPeriod,
-  monthQueryLength,
-  shortTimeSeriesPeriod,
-  weekQueryLength,
-  yearQueryLength,
-} from "../Redis/periods";
-import {
-  CPU_LOAD_TS_KEY,
-  DISK_TS_KEY,
-  MEMORY_TS_KEY,
-  redisReadTSData,
-  TRAFFIC_TS_KEY,
-} from "../Redis/redis_client";
+  getGroupID,
+  getScriptsDir,
+  getSUDOChainsEnabled,
+  getUserID,
+} from "../Configuration";
 import {
   CommandChain,
   DemographicGeoStatisticsSample,
   EndpointStatisticsSample,
-} from "./modules";
-import { readFileSync } from "fs";
-import { addAlert, updateAlert } from "../Alerts/alerts";
-import { FileUpload, GraphQLUpload } from "graphql-upload";
-import { fireCMDChain } from "../Commands/commandChains";
-
+} from ".";
+import {
+  CPU_LOAD_TS_KEY,
+  dayQueryLength,
+  DISK_TS_KEY,
+  generalRedisClient,
+  longTimeSeriesPeriod,
+  mediumTimeSeriesPeriod,
+  MEMORY_TS_KEY,
+  monthQueryLength,
+  NETWORK_TS_KEY,
+  pubsub,
+  redisReadTSData,
+  shortTimeSeriesPeriod,
+  TRAFFIC_TS_KEY,
+  weekQueryLength,
+  yearQueryLength,
+} from "../Redis";
+export const trackedModels = new Map<string, any>();
 export const CPU = {
   getCPUData: () => si.cpu(),
   getCPUCacheData: () => si.cpuCache(),
@@ -104,6 +111,7 @@ export const CPU = {
     };
   },
 };
+trackedModels.set("CPU", CPU);
 
 export const Memory = {
   getMemData: async () => {
@@ -173,6 +181,7 @@ export const Memory = {
     };
   },
 };
+trackedModels.set("Memory", Memory);
 
 export const Disk = {
   getDiskData: async () => {
@@ -256,6 +265,100 @@ export const Disk = {
     };
   },
 };
+trackedModels.set("Disk", Disk);
+
+export const Network = {
+  getNetworkData: async () => {
+    console.log("also here");
+
+    const data = (await si.networkStats())[0];
+
+    data["timestamp"] = new Date().getTime();
+    return data;
+  },
+
+  subscribeToNetwork: () => pubsub.asyncIterator("NETWORK_DATA"),
+
+  getNetworkHistory: async (
+    option: string,
+    toDate: number,
+    fromDate: number
+  ) => {
+    let resolution: number = 150;
+    let startDate: number = 0;
+    let endDate: number = 0;
+    let period: string;
+
+    switch (option) {
+      case "Day":
+        endDate = new Date().getTime();
+        startDate = endDate - dayQueryLength;
+        break;
+      case "Week":
+        endDate = new Date().getTime();
+        startDate = endDate - weekQueryLength;
+        break;
+      case "Month":
+        endDate = new Date().getTime();
+        startDate = endDate - monthQueryLength;
+        break;
+      case "Year":
+        endDate = new Date().getTime();
+        startDate = endDate - yearQueryLength;
+        break;
+      case "Custom":
+        endDate = toDate;
+        startDate = fromDate;
+        break;
+      default:
+        return;
+    }
+
+    if (endDate - startDate < shortTimeSeriesPeriod) period = "short";
+    else if (endDate - startDate < mediumTimeSeriesPeriod) period = "medium";
+    else if (endDate - startDate < longTimeSeriesPeriod) period = "long";
+    else return;
+
+    const downloadSamples = await redisReadTSData(
+      NETWORK_TS_KEY,
+      "download",
+      period,
+      startDate,
+      endDate,
+      resolution
+    );
+
+    const uploadSamples = await redisReadTSData(
+      NETWORK_TS_KEY,
+      "upload",
+      period,
+      startDate,
+      endDate,
+      resolution
+    );
+
+    const data = downloadSamples.map((downloadElement, index) => {
+      const rx_sec = downloadElement.getValue();
+      const tx_sec =
+        index < uploadSamples.length - 1
+          ? uploadSamples[index].getValue()
+          : null;
+      return {
+        rx_sec: rx_sec,
+        tx_sec: tx_sec,
+        timestamp: downloadElement.getTimestamp(),
+      };
+    });
+
+    return {
+      fromDate: startDate,
+      toDate: endDate,
+      data: data,
+    };
+  },
+};
+
+trackedModels.set("Network", Network);
 
 export const Traffic = {
   getTrafficHistory: async (
@@ -361,6 +464,7 @@ export const System = {
   getOSInfo: () => si.osInfo(),
   subscribeToTime: () => pubsub.asyncIterator("TIME_DATA"),
 };
+trackedModels.set("System", System);
 
 export const SystemRuntime = {
   getProcessesData: () => si.processes(),
@@ -386,6 +490,7 @@ export const Docker = {
     }
   ),
 };
+trackedModels.set("Docker", Docker);
 
 export const Alerts = {
   getAlerts: () =>
@@ -418,6 +523,8 @@ export const Alerts = {
     component,
     type,
   }) => {
+    console.log("saving alert");
+
     try {
       const db = new sqlite3.Database("./database.db");
       if (id === -1) {
@@ -435,6 +542,7 @@ export const Alerts = {
               rangeName: rangeName,
               type: type,
               contineuosTriggerCount: 0,
+              fired: false,
             });
           }
         );
@@ -465,6 +573,7 @@ export const Alerts = {
           metric: metric,
           component: component,
           contineuosTriggerCount: 0,
+          fired: false,
         });
       }
       db.close();
@@ -481,6 +590,44 @@ export const Alerts = {
     } catch (e) {
       return false;
     }
+    return true;
+  },
+};
+
+export const NotifcationModel = {
+  getNotifications: async () => {
+    console.log("here");
+
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database("./database.db");
+      const response: any = [];
+
+      db.each(
+        "SELECT * FROM Notifications;",
+        function (err, row) {
+          if (err) reject(err);
+          else response.push(row);
+        },
+        (err, n) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(response);
+          }
+        }
+      );
+    });
+  },
+
+  deletNotification: async ({ id }) => {
+    const db = await open({
+      filename: "./database.db",
+      driver: sqlite3.Database,
+    });
+    const chainRow = await db.run("DELETE FROM Notifications where id = ?", [
+      id,
+    ]);
+    if (!chainRow) return false;
     return true;
   },
 };
@@ -520,15 +667,17 @@ export const CommandChains = {
       });
       args = argRows.map((item) => item.argument);
       const chains = readFileSync(element.scriptFileLocation).toString();
-      chains;
+
       CMDChains.push({
         id: element.id,
         arguments: args,
         chainName: element.chainName,
         scriptFileLocation: element.scriptFileLocation,
         chain: chains,
+        passwordProtected: element.passwordProtected,
       });
     }
+
     return CMDChains;
   },
   saveCommandChain: async ({
@@ -539,11 +688,8 @@ export const CommandChains = {
     argsChanged,
     scriptFileLocation,
     file,
+    passwordProtected,
   }) => {
-    // console.log("Inside save command chain");
-    // console.log(
-    //   `id  :${id}, chain name : ${chainName}, script file location : ${scriptFileLocation}, chain : ${chain}, working directory : ${workingDirectory}, arguments : ${args}`
-    // );
     const db = await open({
       filename: "./database.db",
       driver: sqlite3.Database,
@@ -561,19 +707,18 @@ export const CommandChains = {
 
     try {
       if (id === -1) {
-        console.log("Inserting into database");
         if (!args) args = [];
 
         // will be changed below to accomadate multiple chains with the same name
-        if (!scriptFileLocation) scriptFileLocation = `scripts/${chainName}.sh`;
-        // console.log(
-        //   `id  :${id}, chain name : ${chainName}, script file location : ${scriptFileLocation}, chain : ${chain}, working directory : ${workingDirectory}, arguments : ${args}`
-        // );
+        if (!scriptFileLocation)
+          scriptFileLocation = `${getScriptsDir()}/${chainName}.sh`;
+
         const insertChainResult = await db
-          .run("INSERT INTO CommandChains VALUES (?,?,?)", [
+          .run("INSERT INTO CommandChains VALUES (?,?,?,?)", [
             null,
             chainName,
             scriptFileLocation,
+            passwordProtected | 0,
           ])
           .catch((err) => {
             console.log(`An error occured trying to insert : ${err}`);
@@ -604,44 +749,44 @@ export const CommandChains = {
         let actualLocation: string = "";
         let dataToBeWritten: string = "";
         if (file) {
-          if (file) {
-            const { filename, mimetype, createReadStream } =
-              (await file) as FileUpload;
+          const { filename, mimetype, createReadStream } =
+            (await file) as FileUpload;
 
-            actualLocation = `scripts/${filename}.sh`;
-            const inStream = createReadStream();
-            const readFile = await new Promise<string>((resolve, reject) => {
-              let data = "";
-              inStream.on("data", (chunck) => {
-                data += chunck;
-              });
-              inStream.on("end", () => {
-                resolve(data);
-              });
-              inStream.on("error", (err) => {
-                reject(err);
-              });
-            }).catch((err) => {
-              console.log(
-                `An error occured while trying to read the uploaded file`
-              );
+          actualLocation = `${getScriptsDir()}/${filename}.sh`;
+          const inStream = createReadStream();
+          const readFile = await new Promise<string>((resolve, reject) => {
+            let data = "";
+            inStream.on("data", (chunck) => {
+              data += chunck;
             });
-            if (!readFile) {
-              deleteNewRow(
-                insertChainResult.lastID ? insertChainResult.lastID : -1
-              );
-              return false;
-            }
-            dataToBeWritten = readFile;
+            inStream.on("end", () => {
+              resolve(data);
+            });
+            inStream.on("error", (err) => {
+              reject(err);
+            });
+          }).catch((err) => {
+            console.log(
+              `An error occured while trying to read the uploaded file`
+            );
+          });
+          if (!readFile) {
+            deleteNewRow(
+              insertChainResult.lastID ? insertChainResult.lastID : -1
+            );
+            return false;
           }
+          dataToBeWritten = readFile;
         } else {
-          actualLocation = `scripts/${insertChainResult.lastID}.sh`;
+          actualLocation = `${getScriptsDir()}/${insertChainResult.lastID}.sh`;
           dataToBeWritten = chain;
           // console.log(`Changing file location into ${actualLocation}`);
         }
         try {
           await ps.writeFile(actualLocation, `#!/bin/sh\n${dataToBeWritten}`);
+          await ps.chown(actualLocation, await getUserID(), await getGroupID());
           await ps.chmod(actualLocation, 0o700);
+
           const updateChainResult = await db
             .run(
               "UPDATE CommandChains set scriptFileLocation = ? where id = ?",
@@ -652,6 +797,7 @@ export const CommandChains = {
                 `An error occured trying to update location : ${err}`
               );
             });
+
           if (!updateChainResult) {
             deleteNewRow(
               insertChainResult.lastID ? insertChainResult.lastID : -1
@@ -664,9 +810,7 @@ export const CommandChains = {
           );
         }
       } else if (id >= 0) {
-        console.log("Updating chain");
         if (chain) {
-          console.log("new chain inserted");
           try {
             await ps.writeFile(scriptFileLocation, `#!/bin/sh\n${chain}`);
           } catch (e) {
@@ -776,7 +920,66 @@ export const CommandChains = {
     }
     return true;
   },
-  fireCommandChain: async ({ id, args }) => {
-    return await fireCMDChain(id, args ? args : []);
+  fireCommandChain: async ({ id, args, runWithSUDO }, req) => {
+    if (runWithSUDO && !getSUDOChainsEnabled()) return null;
+    const db = await open({
+      filename: "./database.db",
+      driver: sqlite3.Database,
+    });
+
+    const row = await db
+      .get("SELECT * FROM CommandChains where id = ?", [id])
+      .catch((err) => {
+        console.log(
+          `An error occured while trying to get command chain with id ${id} : ${err}`
+        );
+      });
+    if (!row) {
+      console.log("Row not found in database");
+
+      db.close();
+      return {
+        firedSuccessfully: false,
+        requiresPassword: false,
+        output: null,
+      };
+    }
+    if (row.passwordProtected || runWithSUDO) {
+      req.session.chainID = id;
+      req.session.runWithSUDO = runWithSUDO;
+      req.session.oneTimePassword = generateOneTimePassword();
+      req.session.chainArgs = args;
+      return {
+        firedSuccessfully: false,
+        requiresPassword: true,
+      };
+    }
+    return await fireCMDChain(id, args ? args : [], false, false);
+  },
+  fireProtectedCommandChain: async ({ password }, req) => {
+    if (!req.session.chainID) {
+      return {
+        firedSuccessfully: false,
+        requiresPassword: false,
+        output: null,
+      };
+    }
+    if (password === req.session.oneTimePassword) {
+      return await fireCMDChain(
+        req.session.chainID,
+        req.session.chainArgs,
+        true,
+        req.session.runWithSUDO
+      );
+    }
+    return {
+      firedSuccessfully: false,
+      requiresPassword: false,
+      output: null,
+    };
   },
 };
+
+export function generateOneTimePassword(): any {
+  return "7D7D7D";
+}

@@ -1,7 +1,5 @@
 export default {
   SECRET: "secret",
-  Username: "admin",
-  Password: "admin",
   domain: "localhost:3006",
   notificationInstanceId: "6aab17a9-3a0a-471b-93b9-6d087c58d1fe",
   notificationSecretKey:

@@ -4,4 +4,5 @@ export interface CommandChain {
   chainName: string;
   arguments: string[];
   chain?: string;
+  passwordProtected: boolean;
 }

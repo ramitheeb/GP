@@ -1,0 +1,5 @@
+
+> gp@1.0.0 start /home/ibrahim-ubuntu/Documents/GP/ServerMonitor
+> ts-node-dev src/index.ts
+
+[INFO] 13:22:47 ts-node-dev ver. 1.1.6 (using ts-node ver. 9.1.1, typescript ver. 4.1.5)

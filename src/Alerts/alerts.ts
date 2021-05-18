@@ -1,20 +1,17 @@
-import { Alert, AlertChecker } from "./module";
 import * as sqlite3 from "sqlite3";
-import { redisTSClient } from "../Redis/redis_client";
 import { Aggregation, TimestampRange } from "redis-time-series-ts";
-import { getDayAndHour } from "./dynamicAlerts";
-import { convertTimeUnitToMS } from "../Utils/round_up_time";
-import { open } from "sqlite";
-
+import { NotifyAll } from "../notifier";
+import { Alert, AlertChecker, getDayAndHour } from ".";
+import { getAlertCheckRate, getAlertsEnabled, getIP } from "../Configuration";
+import { redisTSClient } from "../Redis";
+import { convertTimeUnitToMS } from "../Utils";
+import { addNotification } from "../Notifications";
 const alerts: Map<string, AlertChecker> = new Map<string, AlertChecker>();
-const alertInterval = 6000;
+const alertInterval = getAlertCheckRate();
 
-export const getAllAlerts = async () => {
-  const db = await open({
-    filename: "./database.db",
-    driver: sqlite3.Database,
-  });
-
+export const setUpAlerts = () => {
+  if (!getAlertsEnabled()) return;
+  const db = new sqlite3.Database("./database.db");
   db.all("SELECT * FROM Alerts", (err, rows) => {
     if (err) {
       console.log(err);
@@ -22,10 +19,10 @@ export const getAllAlerts = async () => {
     }
 
     if (rows) {
-      rows.forEach((value) => addAlert(value));
+      rows.forEach((value) => addAlert({ ...value, fired: false }));
     }
     db.close();
-  }).then((data) => console.log(data));
+  });
 };
 
 export const addAlert = (alert: Alert) => {
@@ -35,7 +32,7 @@ export const addAlert = (alert: Alert) => {
     alerts.set(key, {
       alertList: [alert],
       timerID: setInterval(() => {
-        alertCheck(key);
+        alertCheck(key, alert);
       }, alertInterval),
     });
   } else {
@@ -53,13 +50,12 @@ export const updateAlert = (updatedAlert: Alert) => {
     if (currentAlert.id === updatedAlert.id) {
       alertList.splice(i, 1);
       alertList.push(updatedAlert);
-
       return;
     }
   }
 };
 
-const alertCheck = async (key: string) => {
+const alertCheck = async (key: string, alert: Alert) => {
   const currentSamples = await redisTSClient
     .range(
       `${key}:runtime`,
@@ -87,11 +83,41 @@ const alertCheck = async (key: string) => {
 
       if (alert.type === "s") {
         if (
+          !alert.fired &&
           currentComponent.getValue() < alert.end &&
           currentComponent.getValue() > alert.start
         ) {
           //Notify
-          // console.log(`Alert ${alert.AlertName} fired`);
+          console.log(`Alert ${alert.AlertName} fired (enter)`);
+          alert.fired = true;
+          NotifyAll({
+            body: `${alert.AlertName} : ${alert.metric}'s ${alert.component} has entered ${alert.rangeName}`,
+            title: alert.AlertName,
+            deep_link: `http://${getIP()}:3006/`,
+          });
+          addNotification({
+            name: alert.AlertName,
+            body: `${alert.AlertName} : ${alert.metric}'s ${alert.component} has entered ${alert.rangeName}`,
+            url: `http://${getIP()}:3006/`,
+          });
+        } else if (
+          alert.fired &&
+          (currentComponent.getValue() > alert.end ||
+            currentComponent.getValue() < alert.start)
+        ) {
+          //Notify
+          console.log(`Alert ${alert.AlertName} fired (exit)`);
+          alert.fired = false;
+          NotifyAll({
+            body: `${alert.AlertName} : ${alert.metric}'s ${alert.component} has exited ${alert.rangeName}`,
+            title: alert.AlertName,
+            deep_link: `http://${getIP()}:3006/`,
+          });
+          addNotification({
+            name: alert.AlertName,
+            body: `${alert.AlertName} : ${alert.metric}'s ${alert.component} has exited ${alert.rangeName}`,
+            url: `http://${getIP()}:3006/`,
+          });
         }
       } else if (alert.type === "d") {
         const TSTime = getDayAndHour(new Date(currentComponent.getTimestamp()));
@@ -124,15 +150,52 @@ const alertCheck = async (key: string) => {
         const sigma = adaptiveSigmaSamples[0];
 
         if (
-          currentComponent.getValue() >
+          !alert.fired &&
+          (currentComponent.getValue() >
             average.getValue() + 3 * sigma.getValue() ||
+            currentComponent.getValue() <
+              average.getValue() - 3 * sigma.getValue())
+        ) {
+          alert.contineuosTriggerCount++;
+          if (alert.contineuosTriggerCount === 4) {
+            //Notify
+            console.log(`Alert ${alert.AlertName} fired (enter)`);
+            alert.fired = true;
+            NotifyAll({
+              body: `${alert.AlertName} : is out of its usual value`,
+              title: alert.AlertName,
+              deep_link: `http://${getIP()}:3006/`,
+            });
+            addNotification({
+              name: alert.AlertName,
+              body: `${alert.AlertName} : is out of its usual value`,
+              url: `http://${getIP()}:3006/`,
+            });
+            alert.contineuosTriggerCount = 0;
+          }
+        } else if (
+          alert.fired &&
           currentComponent.getValue() <
+            average.getValue() + 3 * sigma.getValue() &&
+          currentComponent.getValue() >
             average.getValue() - 3 * sigma.getValue()
         ) {
           alert.contineuosTriggerCount++;
           if (alert.contineuosTriggerCount === 4) {
             //Notify
-            // console.log(`Alert ${alert.AlertName} fired`);
+            console.log(`Alert ${alert.AlertName} fired (exited)`);
+            alert.fired = false;
+            NotifyAll({
+              body: `${alert.AlertName} : is back to its usual value`,
+              title: alert.AlertName,
+              deep_link: `http://${getIP()}:3006/`,
+            });
+            addNotification({
+              name: alert.AlertName,
+              body: `${alert.AlertName} : is back to its usual value`,
+              url: `http://${getIP()}:3006/`,
+            });
+            alert.contineuosTriggerCount = 0;
           }
         } else {
           alert.contineuosTriggerCount = 0;

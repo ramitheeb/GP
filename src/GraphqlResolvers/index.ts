@@ -1,19 +1,9 @@
-import * as jwt from "jsonwebtoken";
 import { AuthenticationError, IResolvers, withFilter } from "apollo-server";
-import config from "../config";
 
 import { GraphQLJSONObject } from "graphql-type-json";
 
 import { GraphQLUpload } from "graphql-upload";
-const getToken = ({ username, password }) =>
-  jwt.sign(
-    {
-      username,
-      password,
-    },
-    config.SECRET,
-    { expiresIn: "20d" }
-  );
+import { Auth } from "../Authentication";
 
 const resolvers: IResolvers = {
   GraphQLUpload: GraphQLUpload,
@@ -45,6 +35,12 @@ const resolvers: IResolvers = {
         return context.models.Disk?.subscribeToDiskIO();
       },
     },
+    Network: {
+      subscribe: (_, __, context) => {
+        // if (!context.req.username) return;
+        return context.models.Network?.subscribeToNetwork();
+      },
+    },
     ProcessesData: {
       subscribe: (_, __, context) => {
         // if (!context.req.username) return;
@@ -59,10 +55,6 @@ const resolvers: IResolvers = {
     },
   },
   Query: {
-    Time: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.System?.getTime();
-    },
     cpu: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.CPU?.getCPUData();
@@ -79,14 +71,6 @@ const resolvers: IResolvers = {
       if (!context.req.username) return;
       return context.models.CPU?.getCPUCacheData();
     },
-    system: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.System?.getSystemData();
-    },
-    bios: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.System?.getBiosData();
-    },
     CpuCurrentSpeedData: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.CPU?.getCPUCurrentSpeed();
@@ -94,6 +78,10 @@ const resolvers: IResolvers = {
     CpuTemperatureData: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.CPU?.getCPUTemperature();
+    },
+    CurrentLoad: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.CPU?.getCurrentLoadData();
     },
     MemData: (_, __, context) => {
       if (!context.req.username) return;
@@ -107,14 +95,6 @@ const resolvers: IResolvers = {
         args.fromDate
       );
     },
-    CurrentLoad: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.CPU?.getCurrentLoadData();
-    },
-    OsInfo: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.System?.getOSInfo();
-    },
     DiskData: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.Disk?.getDiskData();
@@ -127,9 +107,43 @@ const resolvers: IResolvers = {
         args.fromDate
       );
     },
+    NetworkData: (_, __, context) => {
+      if (!context.req.username) return;
+      console.log("here");
+
+      return context.models.Network?.getNetworkData();
+    },
+    NetworkHistory: (_, args, context) => {
+      if (!context.req.username) return;
+      return context.models.Network?.getNetworkHistory(
+        args.option,
+        args.toDate,
+        args.fromDate
+      );
+    },
+    Time: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.System?.getTime();
+    },
+    system: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.System?.getSystemData();
+    },
+    bios: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.System?.getBiosData();
+    },
+    OsInfo: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.System?.getOSInfo();
+    },
     ProcessesData: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.SystemRuntime?.getProcessesData();
+    },
+    UsersData: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.SystemRuntime?.getUsersData();
     },
     TrafficHistory: (_, args, context) => {
       if (!context.req.username) return;
@@ -146,10 +160,6 @@ const resolvers: IResolvers = {
     DemographicGeoStatisticsHistory: (_, __, context) => {
       if (!context.req.username) return;
       return context.models.Traffic?.getDemographicHistory();
-    },
-    UsersData: (_, __, context) => {
-      if (!context.req.username) return;
-      return context.models.SystemRuntime?.getUsersData();
     },
     Alerts: (_, __, context) => {
       if (!context.req.username) return;
@@ -175,25 +185,34 @@ const resolvers: IResolvers = {
       if (!context.req.username) return;
       return context.models.Docker?.getContainerStatus(args.id);
     },
+    Notifications: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.Notifications?.getNotifications();
+    },
   },
   Mutation: {
-    login(_, { username, password }, { res }) {
-      const user = {
-        username: "admin",
-        password: "admin",
-      };
-
-      if (user.username !== username)
-        throw new AuthenticationError("this user is not found!");
-
-      const match = password === user.password;
-      if (!match) throw new AuthenticationError("wrong password!");
-
-      const accessToken = getToken(user);
-      res.cookie("access-token", accessToken);
-      return {
-        id: user.username,
-      };
+    async authenticationRequest(
+      _,
+      { username, serviceName, submethods },
+      { res, req }
+    ) {
+      return await Auth.authenticationRequest(
+        { username, serviceName, submethods },
+        { req }
+      );
+    },
+    async authenticationInfoResponse(
+      _,
+      { numOfResponses, responses },
+      { req, res }
+    ) {
+      return await Auth.authenticationInfoResponse(
+        { numOfResponses, responses },
+        { req, res }
+      );
+    },
+    async addPublickKeyUser(_, { username, publickKey }, { req }) {
+      return await Auth.addPublickKeyUser({ username, publickKey }, { req });
     },
     alert(
       _,
@@ -218,11 +237,7 @@ const resolvers: IResolvers = {
     },
     async saveCommandChain(
       _,
-      { id, chainName, chain, args, argsChanged, scriptFileLocation, file },
-      context
-    ) {
-      if (!context.req.username) return;
-      context.models.CommandChains?.saveCommandChain({
+      {
         id,
         chainName,
         chain,
@@ -230,15 +245,43 @@ const resolvers: IResolvers = {
         argsChanged,
         scriptFileLocation,
         file,
+        passwordProtected,
+      },
+      context
+    ) {
+      if (!context.req.username) return;
+      return context.models.CommandChains?.saveCommandChain({
+        id,
+        chainName,
+        chain,
+        args,
+        argsChanged,
+        scriptFileLocation,
+        file,
+        passwordProtected,
       });
     },
-    async fireCommandChain(_, { id, args }, context) {
+    async fireCommandChain(_, { id, args, runWithSUDO }, context) {
       if (!context.req.username) return;
-      return context.models.CommandChains?.fireCommandChain({ id, args });
+      return context.models.CommandChains?.fireCommandChain(
+        { id, args, runWithSUDO },
+        context.req
+      );
+    },
+    async fireProtectedCommandChain(_, { password }, context) {
+      if (!context.req.username) return;
+      return context.models.CommandChains?.fireProtectedCommandChain(
+        { password },
+        context.req
+      );
     },
     async deleteCommandChains(_, { id }, context) {
       if (!context.req.username) return;
-      context.models.CommanChains.deleteCommandChain({ id });
+      return context.models.CommandChains?.deleteCommandChain({ id });
+    },
+    async deleteNotification(_, { id }, context) {
+      if (!context.req.username) return;
+      return context.models.Notifications?.deletNotification({ id });
     },
   },
 };

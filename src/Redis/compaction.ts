@@ -28,9 +28,19 @@ const compactForAll = async () => {
     "mem-usage",
     "disk-usage",
     "disk-usage",
+    "network-bandwidth",
+    "network-bandwidth",
     "traffic",
   ];
-  const components = ["current-load", "used", "read", "write", "all"];
+  const components = [
+    "current-load",
+    "used",
+    "read",
+    "write",
+    "download",
+    "upload",
+    "all",
+  ];
   const periods = ["runtime", "short", "medium", "long"];
 
   // 1 min - 10 mins - 1hr

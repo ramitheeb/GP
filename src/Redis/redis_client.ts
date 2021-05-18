@@ -4,12 +4,12 @@ import {
   Sample,
   TimestampRange,
 } from "redis-time-series-ts";
-import { generalRedisClient } from "../pubsub";
 
 export const MEMORY_TS_KEY = "mem-usage";
 export const DISK_TS_KEY = "disk-usage";
 export const CPU_LOAD_TS_KEY = "cpu-usage";
 export const TRAFFIC_TS_KEY = "traffic";
+export const NETWORK_TS_KEY = "network-bandwidth";
 export const MEASURED_METRICS: string[] = [
   "cpu-usage",
   "mem-usage",
@@ -24,7 +24,28 @@ export const MEASURED_COMPONENTS: string[] = [
   "write",
   "all",
 ];
-const redisFactory = new RedisTimeSeriesFactory();
+
+import { RedisPubSub } from "graphql-redis-subscriptions";
+import * as Redis from "ioredis";
+import { getRedisIPAdress, getRedisPortNumber } from "../Configuration";
+const redisFactory = new RedisTimeSeriesFactory({
+  host: getRedisIPAdress(),
+  port: getRedisPortNumber(),
+});
+export const generateRedisClient = () =>
+  new Redis(getRedisPortNumber(), getRedisIPAdress());
+
+export const x = () => "s";
+export const generalRedisClient = generateRedisClient();
+
+const subscriberRedisClient = generateRedisClient();
+const publisherRedisClient = generateRedisClient();
+
+export const pubsub = new RedisPubSub({
+  publisher: publisherRedisClient,
+  subscriber: subscriberRedisClient,
+});
+
 export const redisTSClient = redisFactory.create();
 
 export const redisWriteTSData = (
@@ -34,6 +55,12 @@ export const redisWriteTSData = (
   data: number,
   date: number
 ) => {
+  if (!data) {
+    return new Promise((resolve, reject) => {
+      reject();
+    });
+  }
+
   // console.log(`${metric} ${component} ${period} ${data} ${date}`);
 
   const sample = new Sample(`${metric}:${component}:${period}`, data, date);

@@ -1,18 +1,19 @@
 import { CronJob, CronTime } from "cron";
-import {
-  analyzeMetrics,
-  getLastFridayTimestamp,
-} from "../Alerts/dynamicAlerts";
-import { rotateLog } from "../Nginx/parser";
 import { open } from "sqlite";
 import * as sqlite3 from "sqlite3";
-import { findDemographic } from "../Nginx/analyze_addresses";
-import { CPU_LOAD_TS_KEY, redisTSClient } from "../Redis/redis_client";
+
 import { TimestampRange } from "redis-time-series-ts";
-import { generalRedisClient } from "../pubsub";
-import { ScheduledTaskDB } from "./module";
-import { convertTimeUnitToMS } from "../Utils/round_up_time";
 import * as Redis from "ioredis";
+import { analyzeMetrics, getLastFridayTimestamp } from "../Alerts";
+import { findDemographic, rotateLog } from "../Nginx";
+import {
+  CPU_LOAD_TS_KEY,
+  generalRedisClient,
+  generateRedisClient,
+  redisTSClient,
+} from "../Redis";
+import { ScheduledTaskDB } from ".";
+import { convertTimeUnitToMS } from "../Utils";
 const tasks: Map<string, CronJob> = new Map<string, CronJob>();
 const addTasksToDB = async () => {
   const db = await open({
@@ -71,12 +72,13 @@ export const setUpScheduledTasks = async () => {
       if (element.type === "root") {
         date = new Date(element.time);
         taskTime = `${date.getSeconds()} ${date.getMinutes()} ${date.getHours()} *  * ${date.getDay()}`;
+
         switch (element.taskName) {
           case "adaptiveMetricsAnalysis":
             tasks.set(
               "adaptiveMetricsAnalysis",
               new CronJob(taskTime, async () => {
-                const redisClient = new Redis();
+                const redisClient = generateRedisClient();
                 if (
                   element.time - getLastFridayTimestamp(new Date().getTime()) >
                     0 &&
@@ -99,7 +101,7 @@ export const setUpScheduledTasks = async () => {
             tasks.set(
               "logAnalysis",
               new CronJob(taskTime, async () => {
-                const redisClient = new Redis();
+                const redisClient = generateRedisClient();
                 if (
                   element.time - getLastFridayTimestamp(new Date().getTime()) >
                     0 &&
@@ -146,7 +148,7 @@ export const setUpScheduledTasks = async () => {
 };
 
 const findCpuLowTime = async () => {
-  const redisClient = new Redis();
+  const redisClient = generateRedisClient();
   const cpuAdaptiveAverageValues = await redisTSClient
     .range(
       `${CPU_LOAD_TS_KEY}:current-load:adaptive-average`,
@@ -191,7 +193,7 @@ const findCpuLowTime = async () => {
 };
 
 const changeScriptRunTime = async (optimalScriptRunTime: number) => {
-  const blockedRedisClient = new Redis();
+  const blockedRedisClient = generateRedisClient();
   const date = new Date(optimalScriptRunTime);
   const taskTime = `${date.getSeconds()} ${date.getMinutes()} ${date.getHours()} *  * ${date.getDay()}`;
 

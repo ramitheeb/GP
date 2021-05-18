@@ -1,58 +1,72 @@
 import * as express from "express";
 import * as http from "http";
-
-import { ApolloServer, gql } from "apollo-server-express";
+import { ApolloServer } from "apollo-server-express";
 import typeDefs from "./GraphqlSchemas";
 import resolvers from "./GraphqlResolvers";
 import * as cookieParser from "cookie-parser";
 import * as cors from "cors";
-import * as systemInformation from "systeminformation";
 import { RedisPubSub } from "graphql-redis-subscriptions";
-import { generalRedisClient, pubsub } from "./pubsub";
 import {
   startRuntimeSample,
   startSampling,
   stopRuntimeSample,
 } from "./sampler";
-import { getAllAlerts } from "./Alerts/alerts";
-import { setUpScheduledTasks } from "./Scheduler/scheduler";
-import {
-  Alerts,
-  CommandChains,
-  CPU,
-  Disk,
-  Docker,
-  Memory,
-  System,
-  SystemRuntime,
-  Traffic,
-} from "./Models/models";
-// const pubsub = new PubSub();
+
+import * as session from "express-session";
+import { randomBytes } from "crypto";
+import { verify } from "jsonwebtoken";
+import config from "./config";
+import { setUpAlerts } from "./Alerts";
+import { initAuthHandlers } from "./Authentication";
+import { setUpScheduledTasks } from "./Scheduler";
+import { convertTimeUnitToMS } from "./Utils";
+
+let RedisStore = require("connect-redis")(session);
+import { generalRedisClient, generateRedisClient } from "./Redis";
+import { allowedModels } from "./Configuration";
 
 generalRedisClient.set("numOfSubs", 0);
-setUpScheduledTasks().catch((err) => {
-  console.log(`Get rekt lol : ${err}`);
-});
+setUpScheduledTasks();
+initAuthHandlers();
+
 const server = new ApolloServer({
   uploads: false,
   subscriptions: {
     path: "/subscriptions",
-    onConnect: (connectionParams, webSocket, context) => {
-      generalRedisClient
+    onConnect: async (connectionParams, webSocket, context) => {
+      // const accessToken = connectionParams["accessToken"];
+      // try {
+      //   const data = verify(accessToken, config.SECRET) as any;
+      // } catch {
+      //   return false;
+      // }
+      let noError = true;
+      await generalRedisClient
         .multi()
         .get("numOfSubs")
         .incr("numOfSubs")
         .exec((err, result) => {
           if (err) {
-            // console.log(`Error at onConnect : ${err}`);
+            noError = false;
             return;
           }
           const numOfSubs = result[0][1];
 
           if (numOfSubs == 0) startRuntimeSample();
         });
+
+      return noError;
     },
     onDisconnect: (webSocket, context) => {
+      const accessToken = context.request.headers.cookie
+        ?.match("(^|;)[ ]*access-token=([^;]+)")
+        ?.pop();
+      // if (!accessToken) return;
+      // try {
+      //   const data = verify(accessToken, config.SECRET) as any;
+      // } catch {
+      //   return;
+      // }
       generalRedisClient
         .multi()
         .decr("numOfSubs")
@@ -69,22 +83,14 @@ const server = new ApolloServer({
   },
   resolvers,
   typeDefs,
-  context: ({ req, res }: any) => ({
-    req,
-    res,
-    RedisPubSub,
-    models: {
-      CPU: CPU,
-      Memory: Memory,
-      Disk: Disk,
-      Traffic: Traffic,
-      System: System,
-      SystemRuntime: SystemRuntime,
-      Docker: Docker,
-      Alerts: Alerts,
-      CommandChains: CommandChains,
-    },
-  }),
+  context: ({ req, res }: any) => {
+    return {
+      req,
+      res,
+      RedisPubSub,
+      models: allowedModels,
+    };
+  },
 });
 
 const app = express();
@@ -102,6 +108,19 @@ var corsOptions = {
   credentials: true,
 };
 
+app.use(
+  session({
+    name: "authID",
+    secret: randomBytes(8).toString("hex"),
+    store: new RedisStore({ client: generateRedisClient() }),
+    cookie: {
+      maxAge: convertTimeUnitToMS("m") * 2,
+    },
+    unset: "destroy",
+    saveUninitialized: false,
+    resave: false,
+  })
+);
 app.use(cors(corsOptions));
 app.use(cookieParser());
 
@@ -111,7 +130,8 @@ app.use((req, _, next) => {
   //   const data = verify(accessToken, config.SECRET) as any;
   //   (req as any).username = data.username;
   // } catch {}
-  (req as any).username = "string";
+  (req as any).username = "user";
+
   next();
 });
 
@@ -126,5 +146,4 @@ httpServer.listen({ port: 4000 }, () => {
 });
 
 startSampling();
-getAllAlerts();
-//systemInformation.dockerContainers().then((date) => console.log(date));
+setUpAlerts();

@@ -1,14 +1,21 @@
 import { exec as execCB } from "child_process";
 import { promises as ps } from "fs";
 import * as utils from "util";
-import { CommandChain } from "./modules";
 import * as sqlite3 from "sqlite3";
 import { open } from "sqlite";
+import { CommandChain } from ".";
+import { getChainsEnabled, isSUDO } from "../Configuration";
 const exec = utils.promisify(execCB);
 const errorLog = "src/Commands/CMDChainErrors.log";
 const outputLog = "src/Commands/CMDChainOutput.log";
 
-export const fireCMDChain = async (id: number, args: string[]) => {
+export const fireCMDChain = async (
+  id: number,
+  args: string[],
+  passwordSent: boolean,
+  runWithSUDO: boolean
+) => {
+  if (!getChainsEnabled()) return null;
   const db = await open({
     filename: "./database.db",
     driver: sqlite3.Database,
@@ -27,6 +34,7 @@ export const fireCMDChain = async (id: number, args: string[]) => {
     db.close();
     return {
       firedSuccessfully: false,
+      requiresPassword: false,
       output: null,
     };
   }
@@ -36,20 +44,29 @@ export const fireCMDChain = async (id: number, args: string[]) => {
     chainName: row.chainName,
     arguments: args,
     scriptFileLocation: row.scriptFileLocation,
+    passwordProtected: row.passwordProtected,
   };
 
-  let command = `"${CMDChain.scriptFileLocation}" `;
+  let command = "";
+  if (!runWithSUDO && isSUDO()) {
+    command = 'su -c "';
+  }
+  command += `${CMDChain.scriptFileLocation} `;
   for (let i = 0; i < CMDChain.arguments.length; i++) {
     const element = CMDChain.arguments[i];
     command += `${element} `;
+  }
+  command += "";
+  if (!runWithSUDO && isSUDO()) {
+    command += '" ibrahim-ubuntu';
   }
 
   const firedCMD = await exec(command).catch((e) => {
     ps.appendFile(
       errorLog,
-      `${CMDChain.chainName} produced an error : ${e} | at ${new Date()}\n`
+      `${CMDChain.chainName} produced an error :-\n ${e} \n at ${new Date()}\n`
     ).catch((err) => {
-      console.log(`An error occured while writing to ${errorLog} : ${err}`);
+      console.log(`An error occured while writing to ${errorLog} :-\n${err}\n`);
     });
   });
   if (!firedCMD) {
@@ -74,9 +91,9 @@ export const fireCMDChain = async (id: number, args: string[]) => {
   if (firedCMD.stderr !== "") {
     ps.appendFile(
       errorLog,
-      `${CMDChain.chainName} produced an error : ${
+      `${CMDChain.chainName} produced an error :-\n${
         firedCMD.stderr
-      } |  at ${new Date()}\n`
+      }\n at ${new Date()}\n`
     ).catch((err) => {
       console.log(`An error occured while writing to ${errorLog} : "${err}"`);
     });

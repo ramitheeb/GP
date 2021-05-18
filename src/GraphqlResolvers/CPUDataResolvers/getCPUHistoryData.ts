@@ -1,13 +1,14 @@
 import {
+  CPU_LOAD_TS_KEY,
   dayQueryLength,
   longTimeSeriesPeriod,
   mediumTimeSeriesPeriod,
   monthQueryLength,
+  redisReadTSData,
   shortTimeSeriesPeriod,
   weekQueryLength,
   yearQueryLength,
-} from "../../Redis/periods";
-import { CPU_LOAD_TS_KEY, redisReadTSData } from "../../Redis/redis_client";
+} from "../../Redis";
 
 const getCPUHistoryData = async (_, args, context) => {
   if (!context.req.username) return;

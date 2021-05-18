@@ -12,6 +12,7 @@ const allTypes = gql`
     alertName: String!
     type: String!
     id: Float!
+    type: String!
   }
 
   type CommandChain {
@@ -21,6 +22,7 @@ const allTypes = gql`
     arguments: [String]
 
     chain: String
+    passwordProtected: Boolean
   }
   type User {
     id: ID!
@@ -403,6 +405,7 @@ const allTypes = gql`
     rx_sec: Float
     tx_sec: Float
     ms: Float
+    timestamp: Float
   }
 
   type NetworkConnectionsData {
