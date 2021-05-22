@@ -149,7 +149,13 @@ const historicNonRuntimeSample = async () => {
     .then((data) => {
       const timestamp = new Date().getTime();
       data["timestamp"] = timestamp;
-      redisWriteTSData(MEMORY_TS_KEY, "used", "runtime", data.used, timestamp);
+      redisWriteTSData(
+        MEMORY_TS_KEY,
+        "used",
+        "runtime",
+        data.used / (1024 * 1024 * 1024),
+        timestamp
+      );
     })
     .catch((err) => {
       console.log(`An error occured while sampling : ${err}`);
@@ -158,16 +164,20 @@ const historicNonRuntimeSample = async () => {
   systemInformation.disksIO().then((data) => {
     const timestamp = new Date().getTime();
     data["timestamp"] = timestamp;
-    redisWriteTSData(DISK_TS_KEY, "read", "runtime", data.rIO, timestamp).catch(
-      (err) => {
-        console.log(`An error occured while sampling : ${err}`);
-      }
-    );
+    redisWriteTSData(
+      DISK_TS_KEY,
+      "read",
+      "runtime",
+      data.rIO_sec,
+      timestamp
+    ).catch((err) => {
+      console.log(`An error occured while sampling : ${err}`);
+    });
     redisWriteTSData(
       DISK_TS_KEY,
       "write",
       "runtime",
-      data.wIO,
+      data.wIO_sec,
       timestamp
     ).catch((err) => {
       console.log(`An error occured while sampling : ${err}`);
@@ -188,7 +198,7 @@ const historicNonRuntimeSample = async () => {
       console.log(`An error occured while sampling : ${err}`);
     });
     redisWriteTSData(
-      DISK_TS_KEY,
+      NETWORK_TS_KEY,
       "upload",
       "runtime",
       data.tx_sec,
