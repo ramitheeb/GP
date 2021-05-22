@@ -230,6 +230,10 @@ const resolvers: IResolvers = {
         type,
       });
     },
+    deleteAlert(_, { id }, context) {
+      if (!context.req.username) return;
+      return context.models.Alerts?.deleteAlert(id);
+    },
     async saveCommandChain(
       _,
       {

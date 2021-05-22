@@ -5,13 +5,13 @@ const allTypes = gql`
   scalar JSONObject
 
   type Alert {
-    start: Float!
-    end: Float!
-    rangeName: String!
+    start: Float
+    end: Float
+    rangeName: String
     metric: String!
     alertName: String!
-    id: Float!
     type: String!
+    id: Float!
   }
 
   type CommandChain {
@@ -19,6 +19,7 @@ const allTypes = gql`
     chainName: String!
     scriptFileLocation: String!
     arguments: [String]
+
     chain: String
     passwordProtected: Boolean
   }

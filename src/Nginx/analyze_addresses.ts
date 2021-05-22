@@ -47,3 +47,4 @@ export const findDemographic = async () => {
 
   await redisCilent.del("addresses");
 };
+findDemographic();

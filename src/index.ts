@@ -95,8 +95,16 @@ const server = new ApolloServer({
 
 const app = express();
 
+var whitelist = [
+  "http://localhost:5000",
+  "http://localhost:3006",
+  "https://server-monitor.netlify.app",
+];
+
 var corsOptions = {
-  origin: "http://localhost:3006",
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) callback(null, true);
+  },
   credentials: true,
 };
 

@@ -45,7 +45,7 @@ const compactForAll = async () => {
 
   // 1 min - 10 mins - 1hr
   const timeBuckets = [60000, 600000, 3600000];
-  for (let i = 0; i < metrics.length; i++) {
+  for (let i = 4; i < metrics.length; i++) {
     const metric = metrics[i];
     const component = components[i];
     for (let j = 1; j < periods.length; j++) {

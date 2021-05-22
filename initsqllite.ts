@@ -19,10 +19,9 @@ db.serialize(function () {
   //   db.run(
   //     "CREATE TABLE KeyAUTH (username TEXT NOT NULL,publicKeyLocation TEXT NOT NULL)"
   //   );
-
-  db.run(
-    `CREATE TABLE Notifications (id	INTEGER, name	TEXT,  body	TEXT, url TEXT,PRIMARY KEY(id AUTOINCREMENT))`
-  );
+  // db.run(
+  //   `CREATE TABLE Notifications (id	INTEGER, name	TEXT,  body	TEXT, url TEXT,PRIMARY KEY(id AUTOINCREMENT))`
+  // );
 });
 
 db.close();

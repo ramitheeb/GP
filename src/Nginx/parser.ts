@@ -40,7 +40,7 @@ export const rotateLog = async () => {
 };
 
 const analyzeLogs = async () => {
-  const fileString = readFileSync("./src/Nginx/analysis_log.log.0").toString();
+  const fileString = readFileSync("./analysis_log.log.0").toString();
   const lines = fileString.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -63,3 +63,4 @@ const analyzeLogs = async () => {
     console.log(reason);
   });
 };
+analyzeLogs();

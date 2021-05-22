@@ -82,15 +82,16 @@ const typeDefs = [
 
       addPublickKeyUser(username: String!, publickKey: String): Boolean
       alert(
-        start: Float!
-        end: Float!
+        start: Float
+        end: Float
         type: String!
-        rangeName: String!
+        rangeName: String
         metric: String!
         component: String!
         alertName: String!
         id: Float!
       ): Boolean
+      deleteAlert(id: Float!): Boolean
       saveCommandChain(
         id: Float!
         chainName: String!
