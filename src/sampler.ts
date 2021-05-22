@@ -49,7 +49,7 @@ const historicRuntimeSample = async () => {
       data.used / (1024 * 1024 * 1024),
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
   });
 
@@ -68,7 +68,7 @@ const historicRuntimeSample = async () => {
       data.rIO_sec,
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
     redisWriteTSData(
       DISK_TS_KEY,
@@ -77,7 +77,7 @@ const historicRuntimeSample = async () => {
       data.wIO_sec,
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
   });
   systemInformation.networkStats().then((dataList) => {
@@ -96,9 +96,10 @@ const historicRuntimeSample = async () => {
       data.rx_sec,
       timestamp
     ).catch((err) => {
-      console.log(
-        `An error occured while trying to add network sample : ${err}`
-      );
+      console
+        .log
+        // `An error occured while trying to add network sample : ${err}`
+        ();
     });
     redisWriteTSData(
       NETWORK_TS_KEY,
@@ -107,9 +108,9 @@ const historicRuntimeSample = async () => {
       data.tx_sec,
       timestamp
     ).catch((err) => {
-      console.log(
-        `An error occured while trying to add network sample : ${err}`
-      );
+      // console.log(
+      // `An error occured while trying to add network sample : ${err}`
+      // );
     });
   });
   systemInformation.currentLoad().then((data) => {
@@ -158,7 +159,7 @@ const historicNonRuntimeSample = async () => {
       );
     })
     .catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
 
   systemInformation.disksIO().then((data) => {
@@ -171,7 +172,7 @@ const historicNonRuntimeSample = async () => {
       data.rIO_sec,
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
     redisWriteTSData(
       DISK_TS_KEY,
@@ -180,7 +181,7 @@ const historicNonRuntimeSample = async () => {
       data.wIO_sec,
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
   });
   systemInformation.networkStats().then((dataList) => {
@@ -195,7 +196,7 @@ const historicNonRuntimeSample = async () => {
       data.rx_sec,
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
     redisWriteTSData(
       NETWORK_TS_KEY,
@@ -204,7 +205,7 @@ const historicNonRuntimeSample = async () => {
       data.tx_sec,
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
   });
   systemInformation.currentLoad().then((data) => {
