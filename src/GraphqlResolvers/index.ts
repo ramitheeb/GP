@@ -109,7 +109,6 @@ const resolvers: IResolvers = {
     },
     NetworkData: (_, __, context) => {
       if (!context.req.username) return;
-      console.log("here");
 
       return context.models.Network?.getNetworkData();
     },

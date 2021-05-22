@@ -33,9 +33,11 @@ const createForAll = async () => {
     "upload",
     "all",
   ];
-  const periods = ["runtime", "short", "medium", "long"];
+  // const periods = ["runtime", "short", "medium", "long"];
+  const periods = ["runtime"];
+
   // 10 mins - 1 month - 6 months - 4 years
-  const retentions = [157700000000, 2628000000, 15770000000, 126100000000];
+  const retentions = [600000, 2628000000, 15770000000, 126100000000];
   for (let i = 0; i < metrics.length; i++) {
     const metric = metrics[i];
     const component = components[i];
@@ -51,28 +53,28 @@ const createForAll = async () => {
       const duplicationPolicy = metric === "traffic" ? "SUM" : undefined;
       await createDatabase(client, labels, key, retention, duplicationPolicy);
     }
-    await client.create(
-      `${metric}:${component}:adaptive-average`,
-      [
-        new Label("Metric", metric),
-        new Label("Component", component),
-        new Label("SF", "average"),
-      ],
-      157700000000,
-      undefined,
-      "LAST"
-    );
-    await client.create(
-      `${metric}:${component}:adaptive-sigma`,
-      [
-        new Label("Metric", metric),
-        new Label("Component", component),
-        new Label("SF", "sigma"),
-      ],
-      157700000000,
-      undefined,
-      "LAST"
-    );
+    // await client.create(
+    //   `${metric}:${component}:adaptive-average`,
+    //   [
+    //     new Label("Metric", metric),
+    //     new Label("Component", component),
+    //     new Label("SF", "average"),
+    //   ],
+    //   157700000000,
+    //   undefined,
+    //   "LAST"
+    // );
+    // await client.create(
+    //   `${metric}:${component}:adaptive-sigma`,
+    //   [
+    //     new Label("Metric", metric),
+    //     new Label("Component", component),
+    //     new Label("SF", "sigma"),
+    //   ],
+    //   157700000000,
+    //   undefined,
+    //   "LAST"
+    // );
   }
   console.log("Finished creating databases");
 

@@ -1,16 +1,17 @@
 Runtime :-
-del 1) "disk-usage:read:runtime" 2) "disk-usage:write:runtime" 3) "cpu-usage:current-load:runtime" 4) "mem-usage:used:runtime" 5) "traffic:all:runtime"
+del 1) "disk-usage:read:runtime" 2) "disk-usage:write:runtime" 3) "cpu-usage:current-load:runtime" 4) "mem-usage:used:runtime" 5) "traffic:all:runtime" 6) "network-bandwidth:download:runtime" 7) "network-bandwidth:upload:runtime"
 Short :-
-del 1) "disk-usage:read:short" 2) "cpu-usage:current-load:short" 3) "traffic:all:short" 4) "mem-usage:used:short" 5) "disk-usage:write:short"
+del 1) "disk-usage:read:short" 2) "cpu-usage:current-load:short" 3) "traffic:all:short" 4) "mem-usage:used:short" 5) "disk-usage:write:short" 6) "network-bandwidth:download:short" 7) "network-bandwidth:upload:short"
 Medium :-
-del 1) "mem-usage:used:medium" 2) "cpu-usage:current-load:medium" 3) "disk-usage:read:medium" 4) "disk-usage:write:medium" 5) "traffic:all:medium" 
+del 1) "mem-usage:used:medium" 2) "cpu-usage:current-load:medium" 3) "disk-usage:read:medium" 4) "disk-usage:write:medium" 5) "traffic:all:medium" 6) "network-bandwidth:download:medium" 7) "network-bandwidth:upload:medium"
 Long :-
-del 1) "disk-usage:write:long" 2) "disk-usage:read:long" 3) "mem-usage:used:long" 4) "traffic:all:long" 5) "cpu-usage:current-load:long"
+del 1) "disk-usage:write:long" 2) "disk-usage:read:long" 3) "mem-usage:used:long" 4) "traffic:all:long" 5) "cpu-usage:current-load:long" 6) "network-bandwidth:download:long" 7) "network-bandwidth:upload:long"
 Adaptive average :-
-del 1) "mem-usage:used:adaptive-average" 2) "cpu-usage:current-load:adaptive-average" 1) "traffic:all:adaptive-average" 2) "disk-usage:write:adaptive-average" 3) "disk-usage:read:adaptive-average"
+del 1) "mem-usage:used:adaptive-average" 2) "cpu-usage:current-load:adaptive-average" 1) "traffic:all:adaptive-average" 2) "disk-usage:write:adaptive-average" 3) "disk-usage:read:adaptive-average" 4) "network-bandwidth:download:adaptive-average" 5) "network-bandwidth:upload:adaptive-average"
 Adaptive sigma :-
-del 1) "mem-usage:used:adaptive-sigma" 2) "cpu-usage:current-load:adaptive-sigma" 1) "traffic:all:adaptive-sigma" 2) "disk-usage:write:adaptive-sigma" 3) "disk-usage:read:adaptive-sigma"
+del 1) "mem-usage:used:adaptive-sigma" 2) "cpu-usage:current-load:adaptive-sigma" 1) "traffic:all:adaptive-sigma" 2) "disk-usage:write:adaptive-sigma" 3) "disk-usage:read:adaptive-sigma" 4) "network-bandwidth:download:adaptive-sigma" 5) "network-bandwidth:upload:adaptive-sigma"
 To date :-
-del 1) "mem-usage:used:adaptive-average:to-date" 2) "cpu-usage:current-load:adaptive-average:to-date"
+del 1) "mem-usage:used:adaptive-average:to-date" 2) "cpu-usage:current-load:adaptive-average:to-date" 3) "disk-usage:read:adaptive-average:to-date" 4) "disk-usage:write:adaptive-average:to-date" 5) "network-bandwidth:download:to-date" 6) "network-bandwidth:upload:to-date"
 From date :-
-del 1) "cpu-usage:current-load:adaptive-average:from-date" 2) "mem-usage:used:adaptive-average:from-date"
+del 1) "cpu-usage:current-load:adaptive-average:from-date" 2) "mem-usage:used:adaptive-average:from-date" 3) "disk-usage:read:adaptive-average:from-date" 4) "disk-usage:write:adaptive-average:from-date" 5) "network-bandwidth:download:from-date" 6) "network-bandwidth:upload:from-date"
+

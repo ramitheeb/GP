@@ -74,8 +74,6 @@ const passwordHandlerSignature = async () => {
 };
 
 const firstPasswordHandler = async (reponses) => {
-  console.log("here");
-
   if (reponses[0] === "somepassword")
     return {
       name: "second password authentication",

@@ -269,8 +269,6 @@ trackedModels.set("Disk", Disk);
 
 export const Network = {
   getNetworkData: async () => {
-    console.log("also here");
-
     const data = (await si.networkStats())[0];
 
     data["timestamp"] = new Date().getTime();
@@ -586,8 +584,6 @@ export const Alerts = {
 
 export const NotifcationModel = {
   getNotifications: async () => {
-    console.log("here");
-
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database("./database.db");
       const response: any = [];

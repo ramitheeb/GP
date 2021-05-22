@@ -120,3 +120,5 @@ keys/hello.pub
 keys/t
 keys/t.pub
 keys/admin-pub-key.pem
+src/SampleGenerator/TrafficLogsHolder
+src/SampleGenerator/tsimulus-cli.jar
