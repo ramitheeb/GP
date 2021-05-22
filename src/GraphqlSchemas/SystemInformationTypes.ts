@@ -12,7 +12,6 @@ const allTypes = gql`
     alertName: String!
     type: String!
     id: Float!
-    type: String!
   }
 
   type CommandChain {
