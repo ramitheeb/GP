@@ -108,3 +108,63 @@ export const fireCMDChain = async (
     output: firedCMD.stdout,
   };
 };
+
+export const reboot = async () => {
+  let command = "reboot";
+  // return new Promise(async (resolve, reject) => {
+  //   setTimeout(async () => {
+  //     console.log("rebooting");
+
+  //     const firedCMD = await exec(command).catch((e) => {
+  //       ps.appendFile(
+  //         errorLog,
+  //         `rebooting produced an error :-\n ${e} \n at ${new Date()}\n`
+  //       ).catch((err) => {
+  //         console.log(
+  //           `An error occured while writing to ${errorLog} :-\n${err}\n`
+  //         );
+  //       });
+  //     });
+  //     if (!firedCMD) {
+  //       console.log("An error occured and the command wasn't fired");
+  //       resolve({
+  //         firedSuccessfully: false,
+  //         output: null,
+  //       });
+  //       return;
+  //     }
+
+  //     if (firedCMD.stdout !== "") {
+  //       ps.appendFile(
+  //         outputLog,
+  //         `rebooting output is :-\n"${firedCMD.stdout}" at ${new Date()}\n`
+  //       ).catch((err) => {
+  //         console.log(
+  //           `An error occured while writing to ${outputLog} : "${err}"`
+  //         );
+  //       });
+  //     }
+  //     if (firedCMD.stderr !== "") {
+  //       ps.appendFile(
+  //         errorLog,
+  //         `rebooting produced an error :-\n${
+  //           firedCMD.stderr
+  //         }\n at ${new Date()}\n`
+  //       ).catch((err) => {
+  //         console.log(
+  //           `An error occured while writing to ${errorLog} : "${err}"`
+  //         );
+  //       });
+  //       resolve({
+  //         firedSuccessfully: false,
+  //         output: null,
+  //       });
+  //       return;
+  //     }
+  //     resolve({
+  //       firedSuccessfully: true,
+  //       output: firedCMD.stdout,
+  //     });
+  //   }, 1000);
+  // });
+};

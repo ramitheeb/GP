@@ -14,6 +14,7 @@ import {
 } from "../Redis";
 import { ScheduledTaskDB } from ".";
 import { convertTimeUnitToMS } from "../Utils";
+import { reboot } from "../Commands";
 const tasks: Map<string, CronJob> = new Map<string, CronJob>();
 const addTasksToDB = async () => {
   const db = await open({
@@ -177,10 +178,17 @@ const findCpuLowTime = async () => {
   }
 
   if (optimalDownTime != -1) {
+    console.log(
+      `current time is ${new Date().getTime()}, last friday ${getLastFridayTimestamp(
+        new Date().getTime()
+      )}`
+    );
+
     const absoluteDownTime =
       getLastFridayTimestamp(new Date().getTime()) +
       (optimalDownTime as number) +
       convertTimeUnitToMS("W");
+
     await redisClient.set("optimal-downtime", absoluteDownTime);
   }
   if (optimalScriptRunTime !== -1) {
@@ -270,4 +278,82 @@ const changeScriptRunTime = async (optimalScriptRunTime: number) => {
       `An error has occured while trying to update the time of the scheduled task : "${err}"`
     );
   });
+};
+
+export const scheduleTask = (task: ScheduledTaskDB) => {
+  let date: Date = new Date(task.time);
+  if (task.type === "root") {
+    let taskTime: string = `${date.getSeconds()} ${date.getMinutes()} ${date.getHours()} *  * ${date.getDay()}`;
+
+    switch (task.taskName) {
+      case "adaptiveMetricsAnalysis":
+        tasks.set(
+          "adaptiveMetricsAnalysis",
+          new CronJob(taskTime, async () => {
+            const redisClient = generateRedisClient();
+            if (
+              task.time - getLastFridayTimestamp(new Date().getTime()) > 0 &&
+              task.time - getLastFridayTimestamp(new Date().getTime()) <
+                convertTimeUnitToMS("W")
+            ) {
+              return;
+            }
+
+            await analyzeMetrics();
+
+            await redisClient.lpush(
+              "adaptiveMetricsAnalysisDone",
+              new Date().getTime()
+            );
+          })
+        );
+        break;
+      case "logAnalysis":
+        tasks.set(
+          "logAnalysis",
+          new CronJob(taskTime, async () => {
+            const redisClient = generateRedisClient();
+            if (
+              task.time - getLastFridayTimestamp(new Date().getTime()) > 0 &&
+              task.time - getLastFridayTimestamp(new Date().getTime()) <
+                convertTimeUnitToMS("W")
+            ) {
+              return;
+            }
+
+            await rotateLog();
+            await findDemographic();
+            await redisClient.lpush("logAnalysisDone", new Date().getTime());
+          })
+        );
+        break;
+      case "CPULowTimeAnalysis":
+        tasks.set(
+          "CPULowTimeAnalysis",
+          new CronJob(taskTime, async () => {
+            if (
+              task.time - getLastFridayTimestamp(new Date().getTime()) > 0 &&
+              task.time - getLastFridayTimestamp(new Date().getTime()) <
+                convertTimeUnitToMS("W")
+            ) {
+              return;
+            }
+
+            await findCpuLowTime();
+          })
+        );
+        break;
+    }
+  } else if (task.type === "reboot") {
+    let taskTime: string = `${date.getSeconds()} ${date.getMinutes()} ${date.getHours()} ${date.getDate()} ${date.getMonth()} ${date.getDay()}`;
+
+    tasks.set(
+      "rebootTask",
+      new CronJob(taskTime, async () => {
+        reboot();
+      })
+    );
+
+    tasks.get("rebootTask")?.start();
+  }
 };

@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 import { FileUpload } from "graphql-upload";
 
 import { addAlert, updateAlert } from "../Alerts";
-import { fireCMDChain } from "../Commands";
+import { fireCMDChain, reboot } from "../Commands";
 import {
   getGroupID,
   getScriptsDir,
@@ -25,6 +25,7 @@ import {
   dayQueryLength,
   DISK_TS_KEY,
   generalRedisClient,
+  generateRedisClient,
   longTimeSeriesPeriod,
   mediumTimeSeriesPeriod,
   MEMORY_TS_KEY,
@@ -37,6 +38,7 @@ import {
   weekQueryLength,
   yearQueryLength,
 } from "../Redis";
+import { scheduleTask } from "../Scheduler";
 export const trackedModels = new Map<string, any>();
 export const CPU = {
   getCPUData: () => si.cpu(),
@@ -973,6 +975,42 @@ export const CommandChains = {
       requiresPassword: false,
       output: null,
     };
+  },
+  issueReboot: async ({ rebootTime, optimal }, req) => {
+    console.log("in issue reboot");
+
+    let time: number = -1;
+    if (optimal) {
+      const optimalDownTime = await generateRedisClient()
+        .get("optimal-downtime")
+        .catch((err) => {
+          console.log(
+            "An error occured while trying to get the optimal downtime"
+          );
+        });
+      if (!optimalDownTime) return false;
+      time = parseInt(optimalDownTime);
+    } else if (rebootTime) {
+      time = rebootTime;
+    }
+    if (time !== -1) {
+      console.log(`Rebooting at ${time}`);
+
+      scheduleTask({
+        id: -1,
+        taskName: "rebootTask",
+        type: "reboot",
+        time: time,
+      });
+      return true;
+    }
+    reboot();
+    return false;
+  },
+  getOptimalTime: async () => {
+    const optimalTime = await generateRedisClient().get("optimal-downtime");
+    if (!optimalTime) return null;
+    return parseInt(optimalTime);
   },
 };
 
