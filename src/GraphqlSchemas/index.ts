@@ -66,6 +66,7 @@ const typeDefs = [
       Notifications: [Notification]
       EndpointStatisticsHistory: EndpointStatisticsHistoryData
       DemographicGeoStatisticsHistory: DemoGraphicGeoStatisticsHistoryData
+      getOptimalTime: Float
     }
 
     type Mutation {
@@ -109,6 +110,7 @@ const typeDefs = [
       fireProtectedCommandChain(password: String!): CommandChainOutput
       deleteCommandChains(id: Float!): Boolean
       deleteNotification(id: Float!): Boolean
+      issueReboot(optimal: Boolean, rebootTime: Float): Boolean
     }
 
     type Subscription {

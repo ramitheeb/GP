@@ -189,6 +189,10 @@ const resolvers: IResolvers = {
       if (!context.req.username) return;
       return context.models.Notifications?.getNotifications();
     },
+    getOptimalTime: (_, __, context) => {
+      if (!context.req.username) return;
+      return context.models.CommandChains?.getOptimalTime();
+    },
   },
   Mutation: {
     async authenticationRequest(
@@ -278,6 +282,13 @@ const resolvers: IResolvers = {
     async deleteNotification(_, { id }, context) {
       if (!context.req.username) return;
       return context.models.Notifications?.deletNotification({ id });
+    },
+    async issueReboot(_, { optimal, rebootTime }, context) {
+      if (!context.req.username) return;
+      return context.models.CommandChains?.issueReboot(
+        { optimal, rebootTime },
+        context.req
+      );
     },
   },
 };

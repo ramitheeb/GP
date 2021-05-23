@@ -1,4 +1,4 @@
-type TaskType = "root" | "chain";
+type TaskType = "root" | "chain" | "reboot";
 
 export interface ScheduledTaskDB {
   id: number;
