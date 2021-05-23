@@ -78,6 +78,7 @@ const server = new ApolloServer({
           }
           const numOfSubs = result[1][1];
           if (numOfSubs == 0) stopRuntimeSample();
+          else if (numOfSubs < 0) generalRedisClient.set("numOfSubs", 0);
         });
     },
   },

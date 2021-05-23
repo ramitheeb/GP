@@ -156,15 +156,11 @@ const analyze = async (metric: string, component: string) => {
         "adaptive-average",
         adaptiveAVG,
         currentHour
-      )
-        .catch((e) => {
-          console.log(`Error writing data : ${e}`);
-        })
-        .catch((err) => {
-          console.log(
-            `An error occured while trying to add new adaptive average : ${err}`
-          );
-        });
+      ).catch((err) => {
+        console.log(
+          `An error occured while trying to add new adaptive average : ${err}`
+        );
+      });
     }
 
     //Calculate standard deviation
@@ -187,7 +183,7 @@ const analyze = async (metric: string, component: string) => {
             );
           })) as Sample[]
       )?.[0];
-
+      if (!sampleAVG) continue;
       for (let j = 0; j < numOfNewSamples; j++) {
         const currentTime = currentHour + convertTimeUnitToMS("W") * j;
         const nextTime = nextHour + convertTimeUnitToMS("W") * j;
@@ -280,27 +276,27 @@ const analyze = async (metric: string, component: string) => {
           newValues.push(newSample as Sample);
           newSampleSum += (newSample as Sample).getValue();
           existingNewSampleCount++;
-        }
 
-        //Subtract extra values
-        if (numOfOldSamples + j > 12) {
-          const prevSample = (
-            (await redisTSClient
-              .range(
-                `${key}:medium`,
-                new TimestampRange(
-                  oldSamplesStart + currentTime,
-                  oldSamplesStart + nextTime
-                ),
-                1,
-                new Aggregation("avg", convertTimeUnitToMS("h"))
-              )
-              .catch((err) => {})) as Sample[]
-          )?.[0];
-          if (prevSample) {
-            prevValues.push(prevSample);
-            prevSampleSum += prevSample.getValue();
-            existingPrevSampleCount++;
+          //Subtract extra values
+          if (numOfOldSamples + j > 12) {
+            const prevSample = (
+              (await redisTSClient
+                .range(
+                  `${key}:medium`,
+                  new TimestampRange(
+                    oldSamplesStart + currentTime,
+                    oldSamplesStart + nextTime
+                  ),
+                  1,
+                  new Aggregation("avg", convertTimeUnitToMS("h"))
+                )
+                .catch((err) => {})) as Sample[]
+            )?.[0];
+            if (prevSample) {
+              prevValues.push(prevSample);
+              prevSampleSum += prevSample.getValue();
+              existingPrevSampleCount++;
+            }
           }
         }
       }
@@ -421,29 +417,28 @@ const analyze = async (metric: string, component: string) => {
             2
           );
           existingNewSampleCount++;
-        }
-
-        if (numOfOldSamples + j > 12) {
-          const prevSample = (
-            (await redisTSClient
-              .range(
-                `${key}:medium`,
-                new TimestampRange(
-                  oldSamplesStart + currentTime,
-                  oldSamplesStart + nextTime
-                ),
-                1,
-                new Aggregation("avg", convertTimeUnitToMS("h"))
-              )
-              .catch((err) => {})) as Sample[]
-          )?.[0];
-          if (prevSample) {
-            prevValues.push(prevSample as Sample);
-            prevSampleVarianceSquare += Math.pow(
-              prevSample.getValue() - adaptiveAVG,
-              2
-            );
-            existingPrevSampleCount++;
+          if (numOfOldSamples + j > 12) {
+            const prevSample = (
+              (await redisTSClient
+                .range(
+                  `${key}:medium`,
+                  new TimestampRange(
+                    oldSamplesStart + currentTime,
+                    oldSamplesStart + nextTime
+                  ),
+                  1,
+                  new Aggregation("avg", convertTimeUnitToMS("h"))
+                )
+                .catch((err) => {})) as Sample[]
+            )?.[0];
+            if (prevSample) {
+              prevValues.push(prevSample as Sample);
+              prevSampleVarianceSquare += Math.pow(
+                prevSample.getValue() - adaptiveAVG,
+                2
+              );
+              existingPrevSampleCount++;
+            }
           }
         }
       }
