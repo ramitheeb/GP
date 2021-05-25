@@ -11,6 +11,7 @@ import { addAlert, updateAlert } from "../Alerts";
 import { fireCMDChain, reboot } from "../Commands";
 import {
   getGroupID,
+  getRebootEnabled,
   getScriptsDir,
   getSUDOChainsEnabled,
   getUserID,
@@ -977,8 +978,7 @@ export const CommandChains = {
     };
   },
   issueReboot: async ({ rebootTime, optimal }, req) => {
-    console.log("in issue reboot");
-
+    if (!getRebootEnabled()) return false;
     let time: number = -1;
     if (optimal) {
       const optimalDownTime = await generateRedisClient()
@@ -994,8 +994,6 @@ export const CommandChains = {
       time = rebootTime;
     }
     if (time !== -1) {
-      console.log(`Rebooting at ${time}`);
-
       scheduleTask({
         id: -1,
         taskName: "rebootTask",

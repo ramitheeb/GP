@@ -54,3 +54,5 @@ export const getNotificationDomain = () =>
   conf?.Alerts["push-notification-domain"];
 
 export const getAlertCheckRate = () => conf?.Alerts["check-alert-every"];
+
+export const getRebootEnabled = () => conf?.Scheduler["allow-restart"];

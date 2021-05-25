@@ -40,6 +40,7 @@ const server = new ApolloServer({
       // } catch {
       //   return false;
       // }
+
       let noError = true;
       await generalRedisClient
         .multi()
