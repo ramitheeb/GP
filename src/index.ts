@@ -34,12 +34,12 @@ const server = new ApolloServer({
   subscriptions: {
     path: "/subscriptions",
     onConnect: async (connectionParams, webSocket, context) => {
-      const accessToken = connectionParams["accessToken"];
-      try {
-        const data = verify(accessToken, config.SECRET) as any;
-      } catch {
-        return false;
-      }
+      // const accessToken = connectionParams["accessToken"];
+      // try {
+      //   const data = verify(accessToken, config.SECRET) as any;
+      // } catch {
+      //   return false;
+      // }
 
       let noError = true;
       await generalRedisClient
@@ -59,15 +59,15 @@ const server = new ApolloServer({
       return noError;
     },
     onDisconnect: (webSocket, context) => {
-      const accessToken = context.request.headers.cookie
-        ?.match("(^|;)[ ]*access-token=([^;]+)")
-        ?.pop();
-      if (!accessToken) return;
-      try {
-        const data = verify(accessToken, config.SECRET) as any;
-      } catch {
-        return;
-      }
+      // const accessToken = context.request.headers.cookie
+      //   ?.match("(^|;)[ ]*access-token=([^;]+)")
+      //   ?.pop();
+      // if (!accessToken) return;
+      // try {
+      //   const data = verify(accessToken, config.SECRET) as any;
+      // } catch {
+      //   return;
+      // }
       generalRedisClient
         .multi()
         .decr("numOfSubs")
@@ -129,11 +129,11 @@ app.use(cookieParser());
 
 app.use((req, _, next) => {
   const accessToken = req.cookies["access-token"];
-  try {
-    const data = verify(accessToken, config.SECRET) as any;
-    (req as any).username = data.username;
-  } catch {}
-
+  // try {
+  //   const data = verify(accessToken, config.SECRET) as any;
+  //   (req as any).username = data.username;
+  // } catch {}
+  (req as any).username = "username";
   next();
 });
 
