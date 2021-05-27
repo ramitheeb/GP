@@ -1013,7 +1013,7 @@ export const CommandChains = {
 };
 
 export function generateOneTimePassword(): any {
-  const otp = Math.random().toString(36).substring(6);
+  const otp = Math.random().toString(36).substring(5);
   sendMail(otp);
   return otp;
 }
