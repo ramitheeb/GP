@@ -78,10 +78,10 @@ const generateGeneralSample = async (key: string, filename: string) => {
 
   console.log(`Done parsing samples and writing to redis : ${key}`);
 };
-// generateGeneralSample("cpu-usage:current-load", "cpu_usage.log");
+generateGeneralSample("cpu-usage:current-load", "cpu_usage.log");
 generateGeneralSample("mem-usage:used", "mem_usage.log");
-// generateGeneralSample("disk-usage:read", "disk_read.log");
-// generateGeneralSample("disk-usage:write", "disk_write.log");
-// generateGeneralSample("network-bandwidth:upload", "network_upload.log");
-// generateGeneralSample("network-bandwidth:download", "network_download.log");
-// generateTrafficLogs();
+generateGeneralSample("disk-usage:read", "disk_read.log");
+generateGeneralSample("disk-usage:write", "disk_write.log");
+generateGeneralSample("network-bandwidth:upload", "network_upload.log");
+generateGeneralSample("network-bandwidth:download", "network_download.log");
+generateTrafficLogs();
