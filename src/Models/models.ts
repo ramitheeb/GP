@@ -943,6 +943,8 @@ export const CommandChains = {
         output: null,
       };
     }
+    console.log(row);
+
     if (row.passwordProtected || runWithSUDO) {
       req.session.chainID = id;
       req.session.runWithSUDO = runWithSUDO;
