@@ -37,6 +37,7 @@ import {
   weekQueryLength,
   yearQueryLength,
 } from "../Redis";
+import sendMail from "../sendMail";
 export const trackedModels = new Map<string, any>();
 export const CPU = {
   getCPUData: () => si.cpu(),
@@ -483,12 +484,8 @@ export const Docker = {
 
   getContainerStatus: (id) => si.dockerContainerStats(id),
 
-  subscribeToDockerContainerStatus: withFilter(
-    () => pubsub.asyncIterator("CONTAINER_STATUS"),
-    (payload, variables) => {
-      return payload.containerStatus.id === variables.id;
-    }
-  ),
+  subscribeToDockerContainerStatus: (id) =>
+    pubsub.asyncIterator("CONTAINER_STATUS"),
 };
 trackedModels.set("Docker", Docker);
 
@@ -981,5 +978,7 @@ export const CommandChains = {
 };
 
 export function generateOneTimePassword(): any {
-  return "7D7D7D";
+  const otp = Math.random().toString(36).substring(6);
+  sendMail(otp);
+  return otp;
 }
