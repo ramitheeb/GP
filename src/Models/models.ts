@@ -943,7 +943,7 @@ export const CommandChains = {
     }
     console.log(row);
 
-    if (row.passwordProtected || runWithSUDO) {
+    if (row.passwordProtected == true || runWithSUDO) {
       req.session.chainID = id;
       req.session.runWithSUDO = runWithSUDO;
       req.session.oneTimePassword = generateOneTimePassword();
