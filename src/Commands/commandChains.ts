@@ -58,7 +58,7 @@ export const fireCMDChain = async (
   }
   command += "";
   if (!runWithSUDO && isSUDO()) {
-    command += '" shooofly';
+    command += '" shooof';
   }
 
   const firedCMD = await exec(command).catch((e) => {
