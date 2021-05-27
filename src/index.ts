@@ -40,6 +40,7 @@ const server = new ApolloServer({
       // } catch {
       //   return false;
       // }
+
       let noError = true;
       await generalRedisClient
         .multi()
@@ -58,9 +59,9 @@ const server = new ApolloServer({
       return noError;
     },
     onDisconnect: (webSocket, context) => {
-      const accessToken = context.request.headers.cookie
-        ?.match("(^|;)[ ]*access-token=([^;]+)")
-        ?.pop();
+      // const accessToken = context.request.headers.cookie
+      //   ?.match("(^|;)[ ]*access-token=([^;]+)")
+      //   ?.pop();
       // if (!accessToken) return;
       // try {
       //   const data = verify(accessToken, config.SECRET) as any;
@@ -78,6 +79,7 @@ const server = new ApolloServer({
           }
           const numOfSubs = result[1][1];
           if (numOfSubs == 0) stopRuntimeSample();
+          else if (numOfSubs < 0) generalRedisClient.set("numOfSubs", 0);
         });
     },
   },
@@ -103,7 +105,7 @@ var whitelist = [
 
 var corsOptions = {
   origin: function (origin, callback) {
-    //   if (whitelist.indexOf(origin) !== -1)
+    // if (whitelist.indexOf(origin) !== -1) callback(null, true);
     callback(null, true);
   },
   credentials: true,
@@ -131,8 +133,7 @@ app.use((req, _, next) => {
   //   const data = verify(accessToken, config.SECRET) as any;
   //   (req as any).username = data.username;
   // } catch {}
-  (req as any).username = "user";
-
+  (req as any).username = "username";
   next();
 });
 

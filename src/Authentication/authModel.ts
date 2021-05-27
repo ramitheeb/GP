@@ -24,8 +24,13 @@ export const Auth = {
       });
     if (!userRow) {
       return {
-        fail: true,
-      };
+        name: "Authentication",
+        instruction: "enter the authentication key : ",
+        numOfPrompts: 1,
+        values: [],
+        prompts: ["key : "],
+        echo: [false],
+      } as AuthInfoRequest;
     }
     req.session.service = serviceName;
     req.session.authLevel = 1;
@@ -47,10 +52,12 @@ export const Auth = {
       return {
         fail: true,
       };
-    } else
+    } else {
+      req.session.numOfPrompts = (auth as AuthInfoRequest).numOfPrompts;
       return {
         infoRequest: auth,
       };
+    }
   },
   authenticationInfoResponse: async (
     { numOfResponses, responses },
@@ -60,6 +67,11 @@ export const Auth = {
       return {
         fail: true,
       };
+    if (req.session.numOfPrompts != numOfResponses) {
+      return {
+        fail: true,
+      };
+    }
     const service = req.session.service;
     const authLevel = parseInt(req.session.authLevel);
 

@@ -1,2 +1,2 @@
 #!/bin/sh
-echo chain nombre uno
+echo ran with SUDO

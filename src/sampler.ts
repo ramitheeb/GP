@@ -46,10 +46,10 @@ const historicRuntimeSample = async () => {
       MEMORY_TS_KEY,
       "used",
       "runtime",
-      data.used,
+      data.used / (1024 * 1024 * 1024),
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
   });
 
@@ -61,19 +61,23 @@ const historicRuntimeSample = async () => {
         DiskData: data,
       });
     }
-    redisWriteTSData(DISK_TS_KEY, "read", "runtime", data.rIO, timestamp).catch(
-      (err) => {
-        console.log(`An error occured while sampling : ${err}`);
-      }
-    );
+    redisWriteTSData(
+      DISK_TS_KEY,
+      "read",
+      "runtime",
+      data.rIO_sec,
+      timestamp
+    ).catch((err) => {
+      // console.log(`An error occured while sampling : ${err}`);
+    });
     redisWriteTSData(
       DISK_TS_KEY,
       "write",
       "runtime",
-      data.wIO,
+      data.wIO_sec,
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
   });
   systemInformation.networkStats().then((dataList) => {
@@ -92,20 +96,21 @@ const historicRuntimeSample = async () => {
       data.rx_sec,
       timestamp
     ).catch((err) => {
-      console.log(
-        `An error occured while trying to add network sample : ${err}`
-      );
+      console
+        .log
+        // `An error occured while trying to add network sample : ${err}`
+        ();
     });
     redisWriteTSData(
-      DISK_TS_KEY,
+      NETWORK_TS_KEY,
       "upload",
       "runtime",
       data.tx_sec,
       timestamp
     ).catch((err) => {
-      console.log(
-        `An error occured while trying to add network sample : ${err}`
-      );
+      // console.log(
+      // `An error occured while trying to add network sample : ${err}`
+      // );
     });
   });
   systemInformation.currentLoad().then((data) => {
@@ -145,28 +150,38 @@ const historicNonRuntimeSample = async () => {
     .then((data) => {
       const timestamp = new Date().getTime();
       data["timestamp"] = timestamp;
-      redisWriteTSData(MEMORY_TS_KEY, "used", "runtime", data.used, timestamp);
+      redisWriteTSData(
+        MEMORY_TS_KEY,
+        "used",
+        "runtime",
+        data.used / (1024 * 1024 * 1024),
+        timestamp
+      );
     })
     .catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
 
   systemInformation.disksIO().then((data) => {
     const timestamp = new Date().getTime();
     data["timestamp"] = timestamp;
-    redisWriteTSData(DISK_TS_KEY, "read", "runtime", data.rIO, timestamp).catch(
-      (err) => {
-        console.log(`An error occured while sampling : ${err}`);
-      }
-    );
+    redisWriteTSData(
+      DISK_TS_KEY,
+      "read",
+      "runtime",
+      data.rIO_sec,
+      timestamp
+    ).catch((err) => {
+      // console.log(`An error occured while sampling : ${err}`);
+    });
     redisWriteTSData(
       DISK_TS_KEY,
       "write",
       "runtime",
-      data.wIO,
+      data.wIO_sec,
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
   });
   systemInformation.networkStats().then((dataList) => {
@@ -181,16 +196,16 @@ const historicNonRuntimeSample = async () => {
       data.rx_sec,
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
     redisWriteTSData(
-      DISK_TS_KEY,
+      NETWORK_TS_KEY,
       "upload",
       "runtime",
       data.tx_sec,
       timestamp
     ).catch((err) => {
-      console.log(`An error occured while sampling : ${err}`);
+      // console.log(`An error occured while sampling : ${err}`);
     });
   });
   systemInformation.currentLoad().then((data) => {

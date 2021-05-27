@@ -63,4 +63,3 @@ const analyzeLogs = async () => {
     console.log(reason);
   });
 };
-analyzeLogs();

@@ -9,7 +9,7 @@
 # eg. to enable tracking of Disk and Memory while disabling it for anything else, the list would be:-
 #   tracked-metrics = [
 #         "Memory",
-#       "Disk",
+#         "Disk",
 #   ]
 tracked-metrics = [
     "CPU",
@@ -34,7 +34,7 @@ sample-data-every = 10000
 [Alerts]
 
 # Enables the alerting subsystem, if this flag is set to false, no alert reporting or checking would be performed by the system
-enable-alerts = false
+enable-alerts = true
 # Enables the use of dynamic alerts, which uses a model of the system to determine if a certain value is an anomaly, if this option is disabled and
 # the scheduler is set to run at a certain time by setting the run-on parameters, the adaptive analysis task is disabled
 # The enable-alerts value has to be set to true for this to take effect 
@@ -89,14 +89,8 @@ GeoIP-database-location = "./src/Nginx/GeoLite2-Country_20210309/GeoLite2-Countr
 # The schedular runs tasks such as parsing Nginx logs and finding the optimal restart time and the optimal schedular task runtime 
 [Scheduler]
 
-# The schedular runs the analysis tasks on the times that tend to have low CPU usage, to make these tasks run at a certain time of 
-# a certain day, set the run-on-time and run-on-day
+# The schedular runs the analysis tasks on the times that tend to have low CPU usage and schedules system reboots.
 
-# The day to run these tasks, days are mapped to numbers with Sunday being 0 and Saturday being 6
-# run-on-day = 5
-
-# The time of the day to run these tasks
-# run-on-time = "00:00:00.000000"
 
 # Allow the user to perform a system restart
 allow-restart = true

@@ -40,10 +40,11 @@ const privateKey = createPrivateKey(
 //     "hex"
 //   )
 // );
-// const sign = createSign("SHA256");
-// sign.update("some data to sign");
-// sign.end();
-// const signature = sign.sign(privateKey);
+const sign = createSign("SHA256");
+sign.update("some data to sign");
+sign.end();
+const signature = sign.sign(privateKey);
+console.log(signature.toString("hex"));
 
 // const verify = createVerify("SHA256");
 // verify.update("some data to sign");

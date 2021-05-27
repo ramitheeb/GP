@@ -8,9 +8,10 @@ import { readFileSync } from "fs";
 import { FileUpload } from "graphql-upload";
 
 import { addAlert, updateAlert } from "../Alerts";
-import { fireCMDChain } from "../Commands";
+import { fireCMDChain, reboot } from "../Commands";
 import {
   getGroupID,
+  getRebootEnabled,
   getScriptsDir,
   getSUDOChainsEnabled,
   getUserID,
@@ -25,6 +26,7 @@ import {
   dayQueryLength,
   DISK_TS_KEY,
   generalRedisClient,
+  generateRedisClient,
   longTimeSeriesPeriod,
   mediumTimeSeriesPeriod,
   MEMORY_TS_KEY,
@@ -38,6 +40,8 @@ import {
   yearQueryLength,
 } from "../Redis";
 import sendMail from "../sendMail";
+import { scheduleTask } from "../Scheduler";
+
 export const trackedModels = new Map<string, any>();
 export const CPU = {
   getCPUData: () => si.cpu(),
@@ -270,8 +274,6 @@ trackedModels.set("Disk", Disk);
 
 export const Network = {
   getNetworkData: async () => {
-    console.log("also here");
-
     const data = (await si.networkStats())[0];
 
     data["timestamp"] = new Date().getTime();
@@ -593,8 +595,6 @@ export const Alerts = {
 
 export const NotifcationModel = {
   getNotifications: async () => {
-    console.log("here");
-
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database("./database.db");
       const response: any = [];
@@ -941,6 +941,8 @@ export const CommandChains = {
         output: null,
       };
     }
+    console.log(row);
+
     if (row.passwordProtected || runWithSUDO) {
       req.session.chainID = id;
       req.session.runWithSUDO = runWithSUDO;
@@ -974,6 +976,39 @@ export const CommandChains = {
       requiresPassword: false,
       output: null,
     };
+  },
+  issueReboot: async ({ rebootTime, optimal }, req) => {
+    if (!getRebootEnabled()) return false;
+    let time: number = -1;
+    if (optimal) {
+      const optimalDownTime = await generateRedisClient()
+        .get("optimal-downtime")
+        .catch((err) => {
+          console.log(
+            "An error occured while trying to get the optimal downtime"
+          );
+        });
+      if (!optimalDownTime) return false;
+      time = parseInt(optimalDownTime);
+    } else if (rebootTime) {
+      time = rebootTime;
+    }
+    if (time !== -1) {
+      scheduleTask({
+        id: -1,
+        taskName: "rebootTask",
+        type: "reboot",
+        time: time,
+      });
+      return true;
+    }
+    reboot();
+    return false;
+  },
+  getOptimalTime: async () => {
+    const optimalTime = await generateRedisClient().get("optimal-downtime");
+    if (!optimalTime) return null;
+    return parseInt(optimalTime);
   },
 };
 

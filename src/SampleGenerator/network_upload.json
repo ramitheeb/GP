@@ -1,0 +1,94 @@
+{
+  "generators": [
+      {
+      "name": "monthly-basis",
+      "type": "monthly",
+      "points": {
+        "january": 0,
+        "february": 300,
+        "march": 100,
+        "april": 150,
+        "may": 20,
+        "june": 0,
+        "july": 0,
+        "august": 50,
+        "september": 200,
+        "october": 150,
+        "november": 0,
+        "december": 0
+      }
+    },
+    {
+      "name": "daily-variation",
+      "type": "daily",
+      "points": {
+      	"00:00:00":800,
+      	"01:00:00":700,
+      	"02:00:00":200,
+      	"03:00:00":300,
+      	"04:00:00":150,
+      	"05:00:00":80,
+      	"06:00:00":40,
+      	"07:00:00":120,
+      	"08:00:00":300,
+      	"09:00:00":600,
+      	"10:00:00":800,
+      	"11:00:00":1100,
+      	"12:00:00":1400,
+        "13:00:00": 1300,
+        "14:00:00": 900,
+	"15:00:00": 950,
+	"16:00:00":700,
+	"17:00:00": 500,
+	"18:00:00": 800,
+	"19:00:00":200,
+	"20:00:00":300,
+	"21:00:00":500,
+	"22:00:00":600,
+	"23:00:00":900
+      }
+    },
+    {
+	"name" : "weekly-variation",
+	"type":"weekly",
+	"points":{
+	"saturday":1,
+	"sunday":4,
+	"monday":5,
+	"tuesday":4,
+	"wednesday":6,
+	"thursday":5,
+	"friday":3
+	}
+    },
+    {
+       "name": "noise",
+       "type": "arma",
+	   "origin": "2020-05-22 00:00:00",
+       "model": {
+          "std": 0.2,
+          "c": 0,
+        "seed": 1234
+      },
+      "timestep": 300000
+    },
+    {
+      "name": "result",
+      "type": "aggregate",
+      "aggregator": "sum",
+      "generators": [
+        "monthly-basis",
+        "daily-variation"
+      ]
+    }
+  ],
+  "exported": [
+    {
+      "name": "mem-usage",
+      "generator": "result",
+      "frequency": 60000
+    }
+  ],
+  "from": "2018-05-22 00:00:00",
+  "to": "2021-05-27 00:00:00"
+}
