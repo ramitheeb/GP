@@ -34,7 +34,9 @@ const server = new ApolloServer({
   subscriptions: {
     path: "/subscriptions",
     onConnect: async (connectionParams, webSocket, context) => {
-      // const accessToken = connectionParams["accessToken"];
+      // const accessToken = connectionParams["access-token"];
+      // console.log(connectionParams);
+
       // try {
       //   const data = verify(accessToken, config.SECRET) as any;
       // } catch {
@@ -128,12 +130,11 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 
 app.use((req, _, next) => {
-  // const accessToken = req.cookies["access-token"];
-  // try {
-  //   const data = verify(accessToken, config.SECRET) as any;
-  //   (req as any).username = data.username;
-  // } catch {}
-  (req as any).username = "username";
+  const accessToken = req.cookies["access-token"];
+  try {
+    const data = verify(accessToken, config.SECRET) as any;
+    (req as any).username = data.username;
+  } catch {}
   next();
 });
 

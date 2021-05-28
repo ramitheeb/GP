@@ -956,6 +956,9 @@ export const CommandChains = {
     return await fireCMDChain(id, args ? args : [], false, false);
   },
   fireProtectedCommandChain: async ({ password }, req) => {
+    console.log(password);
+    console.log(req.session);
+
     if (!req.session.chainID) {
       return {
         firedSuccessfully: false,
